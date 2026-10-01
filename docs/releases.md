@@ -65,8 +65,8 @@ Compile com a assinatura original e prepare os arquivos (ajuste o caminho do SDK
 npm ci
 npx expo prebuild --platform android --no-install
 .\android\gradlew.bat -p android assembleRelease '-PreactNativeArchitectures=armeabi-v7a,arm64-v8a'
-python scripts/prepare_release.py --apk android/app/build/outputs/apk/release/app-release.apk --aapt CAMINHO_DO_SDK/build-tools/36.0.0/aapt.exe --apksigner CAMINHO_DO_SDK/build-tools/36.0.0/apksigner.bat --tag v1.3.0
-gh release create v1.3.0 .dist/release/meu-saldo.apk .dist/release/update.json --repo e-Lopes/meu-saldo --target main --title "Meu Saldo 1.3.0" --notes-file release/notes.md --latest
+python scripts/prepare_release.py --apk android/app/build/outputs/apk/release/app-release.apk --aapt CAMINHO_DO_SDK/build-tools/36.0.0/aapt.exe --apksigner CAMINHO_DO_SDK/build-tools/36.0.0/apksigner.bat --tag v1.3.1
+gh release create v1.3.1 .dist/release/meu-saldo.apk .dist/release/update.json --repo e-Lopes/meu-saldo --target main --title "Meu Saldo 1.3.1" --notes-file release/notes.md --latest
 ```
 
 O script requer Python 3.11 ou superior e usa apenas a biblioteca padrão. A versão, tamanho, hash e URL são gerados a partir do APK compilado e de `app.json`; não edite `update.json` à mão. O APK contém as arquiteturas ARM de celulares reais; o development build local pode incluir x86 para emuladores. APKs maiores que 100 MB são recusados para preservar compatibilidade com o atualizador da versão 1.2.

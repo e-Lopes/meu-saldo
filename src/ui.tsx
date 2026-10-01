@@ -213,8 +213,8 @@ export function MonthSelector({
   return (
     <View style={[s.row, { justifyContent: 'space-between' }]}>
       <IconButton icon="chevron-back" label="Mês anterior" onPress={() => onShift(-1)} />
-      <Text style={[s.heading, { flex: 1, textAlign: 'center', textTransform: 'capitalize' }]}>
-        {monthName(month)}
+      <Text style={[s.heading, { flex: 1, textAlign: 'center' }]}>
+        {monthName(month).replace(/^./, (first) => first.toLocaleUpperCase('pt-BR'))}
       </Text>
       <IconButton icon="chevron-forward" label="Próximo mês" onPress={() => onShift(1)} />
     </View>

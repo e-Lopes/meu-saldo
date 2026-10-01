@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CategoryScreen } from './src/CategoryScreen';
 import { Charts } from './src/Charts';
+import { MenuScreen } from './src/MenuScreen';
 import { EntryForm } from './src/EntryForm';
 import {
   dateLabel,
@@ -365,7 +366,9 @@ function Main() {
             ? 'Sua vida financeira, no seu celular.'
             : tab === 'menu'
               ? 'Tudo sob seu controle.'
-              : 'Acompanhe seu mês.'}
+              : tab === 'charts'
+                ? 'Entenda para onde seu dinheiro vai.'
+                : 'Acompanhe seu mês.'}
         </Text>
         {tab !== 'menu' && (
           <MonthSelector
@@ -412,55 +415,29 @@ function Main() {
             onEdit={setEntry}
           />
         )}
-        {tab === 'charts' && ledger && <Charts ledger={ledger} month={month} />}
+        {tab === 'charts' && ledger && (
+          <Charts
+            ledger={ledger}
+            month={month}
+            onCategory={(key) => {
+              setCategoryFilter(key);
+              setTab('history');
+            }}
+          />
+        )}
         {tab === 'menu' && (
-          <>
-            <View style={s.card}>
-              <Text style={s.heading}>Organize seus registros</Text>
-              <Button
-                secondary
-                title="Gerenciar categorias"
-                disabled={!ledger || store.busy}
-                onPress={() => setCategories(true)}
-              />
-            </View>
-            <View style={s.card}>
-              <Text style={s.heading}>Backup manual</Text>
-              <Text style={s.text}>
-                Desinstalar ou limpar os dados apaga seus registros. Exporte uma cópia para
-                recuperá-los depois.
-              </Text>
-              <Button
-                title={backupBusy ? 'Aguarde…' : 'Exportar backup JSON'}
-                disabled={!ledger || backupBusy || store.busy}
-                onPress={() => void exportBackup()}
-              />
-              <Button
-                secondary
-                title="Restaurar backup JSON"
-                disabled={backupBusy || store.busy || store.loading}
-                onPress={() => void importBackup()}
-              />
-              <Text style={s.muted}>
-                O backup não é criptografado. A restauração substitui todos os registros após sua
-                confirmação.
-              </Text>
-            </View>
-            <UpdateCard updates={updates} settings />
-            <View style={s.card}>
-              <Text style={s.heading}>Privacidade</Text>
-              <Text style={s.text}>
-                Seus lançamentos e categorias ficam somente neste celular. Sem login, banco de
-                dados, sincronização, anúncios ou rastreamento.
-              </Text>
-              <Text style={s.muted}>
-                A internet é usada apenas para buscar versões e baixar APKs do GitHub. Nenhum
-                registro financeiro é enviado. O GitHub recebe dados normais de acesso, como IP e
-                versão do app.
-              </Text>
-              <Text style={s.muted}>Meu Saldo {updates.version} · gratuito · Android</Text>
-            </View>
-          </>
+          <MenuScreen
+            ledger={ledger}
+            version={updates.version}
+            busy={store.busy}
+            loading={store.loading}
+            backupBusy={backupBusy}
+            updateVersion={updates.release?.versionName}
+            updateContent={<UpdateCard updates={updates} settings />}
+            onCategories={() => setCategories(true)}
+            onExport={() => void exportBackup()}
+            onImport={() => void importBackup()}
+          />
         )}
       </ScrollView>
       <View

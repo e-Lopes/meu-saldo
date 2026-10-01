@@ -1,9 +1,10 @@
-Meu Saldo 1.3.0 — migração para Expo
+Meu Saldo 1.3.1 — Gráficos e Menu mais simples
 
-- Interface Android em React Native e TypeScript com Expo.
-- Início, lançamentos, categorias, histórico com filtros e gráficos dos últimos seis meses.
-- Backup e restauração JSON pelo seletor de arquivos do Android.
-- Atualizações pelo GitHub Releases com verificação da assinatura original.
-- Mesmo identificador, assinatura, arquivo saldo.json e formato de dados das versões anteriores.
+- Gastos por categoria com barras proporcionais, valores claros e acesso direto ao Histórico.
+- Evolução dos seis meses com seleção de mês e resumo de receitas, despesas e saldo.
+- Análise acumulada em detalhe opcional para uma tela inicial mais fácil de ler.
+- Menu com destaque à privacidade, ajuda rápida e opções compactas.
+- Cópia de segurança disponível em uma seção expansível.
+- Mesmo identificador, assinatura e formato de dados locais.
 
 Instale sobre a versão anterior, sem desinstalar. O app continua gratuito e funciona offline; a conexão é usada apenas para buscar e baixar atualizações. A instalação da nova versão precisa da confirmação do Android.

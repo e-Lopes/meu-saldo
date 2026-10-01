@@ -6,6 +6,8 @@ Aplicação Android em **Expo, React Native e TypeScript**, gratuita e com dados
 
 O aplicativo possui início com saldo mensal, cadastro e edição de receitas/despesas, categorias, histórico com busca e filtros, gráficos, backup manual e atualizador por GitHub Releases.
 
+Os Gráficos oferecem gastos por categoria com acesso ao Histórico e evolução dos seis meses com seleção de período. O Menu destaca a privacidade e reúne categorias, atualizações, ajuda e cópia de segurança em opções expansíveis.
+
 A navegação usa tabs de Início/Histórico/Gráficos/Menu e telas modais para lançamentos e categorias. A orientação é fixa em retrato. A imagem `imagem-ilustrativa.jpg` é apenas referência visual.
 
 O app instalado funciona offline. Não possui API financeira, autenticação, banco de dados, Google Drive, anúncios ou analytics. A internet é usada somente para verificar versões e baixar APKs.
@@ -76,6 +78,7 @@ src/
   EntryForm.tsx                    formulário e calendário
   CategoryScreen.tsx               gerenciamento de categorias
   Charts.tsx                       gráficos e valores em texto
+  MenuScreen.tsx                   privacidade, opções e ajuda
   finance.ts                       tipos, validação e cálculos locais
   useLedger.ts                     fila de alterações e estado salvo
   useUpdates.ts                    estado e fluxo de atualização
@@ -122,6 +125,8 @@ APK: `android/app/build/outputs/apk/release/app-release.apk`. O plugin recusa um
 Guarde uma cópia segura de `.tools/meu-saldo-release.jks` e `keystore.properties` fora do Git. Não crie outra chave para atualizar instalações existentes.
 
 Consulte [Releases e atualizações](docs/releases.md) e [Migração para Expo](docs/expo-migration.md). O código Kotlin/Compose anterior permanece no histórico do Git.
+
+As recomendações priorizadas de evolução e a validação manual desta UI estão em [next_steps.md](next_steps.md).
 
 ## Troubleshooting
 
