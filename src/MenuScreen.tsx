@@ -245,7 +245,7 @@ export function MenuScreen({
   );
 }
 function Tip({ title, text }: { title: string; text: string }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s } = useAppearance();
   return (
     <View style={{ gap: 4 }}>
       <Text style={[s.text, { fontWeight: '600' }]}>{title}</Text>
@@ -270,7 +270,7 @@ function MenuRow({
   disabled?: boolean;
   highlight?: boolean;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s } = useAppearance();
   const styles = menuStyles(palette);
   return (
     <Pressable

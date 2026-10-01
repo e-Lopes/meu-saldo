@@ -42,7 +42,7 @@ export function EntryForm({
   onDelete: (id: string) => Promise<void>;
   onClose: () => void;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s } = useAppearance();
   const [kind, setKind] = useState<Kind>(entry?.kind ?? 'DESPESA');
   const [amount, setAmount] = useState(
     entry ? (entry.cents / 100).toFixed(2).replace('.', ',') : '',
@@ -149,10 +149,24 @@ export function EntryForm({
             contentContainerStyle={s.content}
           >
             <View style={s.wrap}>
-              <Chip selected={kind === 'DESPESA'} onPress={() => setKind('DESPESA')}>
+              <Chip
+                disabled={saving}
+                selected={kind === 'DESPESA'}
+                onPress={() => {
+                  setKind('DESPESA');
+                  setCategoryError('');
+                }}
+              >
                 Despesa
               </Chip>
-              <Chip selected={kind === 'RECEITA'} onPress={() => setKind('RECEITA')}>
+              <Chip
+                disabled={saving}
+                selected={kind === 'RECEITA'}
+                onPress={() => {
+                  setKind('RECEITA');
+                  setCategoryError('');
+                }}
+              >
                 Receita
               </Chip>
             </View>

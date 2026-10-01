@@ -96,8 +96,11 @@ class MeuSaldoModule : Module() {
               if (result.requestCode == EXPORT_REQUEST) {
                 context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(requireNotNull(text).toByteArray(Charsets.UTF_8)) }
                   ?: error("Não foi possível abrir o destino do backup.")
-                require(preferences.edit().putLong("lastBackup", System.currentTimeMillis()).commit()) {
-                  "A cópia foi salva, mas não foi possível registrar a data da exportação."
+                val previousBackup = preferences.getLong("lastBackup", 0)
+                if (!preferences.edit().putLong("lastBackup", System.currentTimeMillis()).commit()) {
+                  // A failed commit can still update SharedPreferences in memory.
+                  preferences.edit().putLong("lastBackup", previousBackup).commit()
+                  error("A cópia foi salva, mas não foi possível registrar a data da exportação.")
                 }
                 promise.resolve(true)
               } else {

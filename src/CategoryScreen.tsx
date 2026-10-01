@@ -15,7 +15,7 @@ export function CategoryScreen({
   mutate: (change: (l: Ledger) => Ledger) => Promise<void>;
   onClose: () => void;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s } = useAppearance();
   const [editing, setEditing] = useState<Category | null | undefined>();
   const [name, setName] = useState('');
   const [color, setColor] = useState(colors[0]);
@@ -233,7 +233,7 @@ export function CategoryScreen({
                     key={v}
                     onPress={() => setColor(v)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Cor ${categoryColor(v)}`}
+                    accessibilityLabel={`Cor ${['Laranja', 'Amarelo', 'Verde água', 'Roxo', 'Azul', 'Rosa', 'Verde'][colors.indexOf(v)] ?? categoryColor(v)}`}
                     accessibilityState={{ selected: color === v }}
                     disabled={busy}
                     style={{

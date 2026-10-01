@@ -13,12 +13,12 @@ import { money as formatMoney } from './finance';
 import { errorMessage } from './useLedger';
 
 export const lightColors = {
-  teal: '#287D79',
+  teal: '#247571',
   navy: '#17304F',
   background: '#F3F6F8',
   muted: '#59697C',
   border: '#DEE6EC',
-  expense: '#B74E49',
+  expense: '#AC423D',
   income: '#21786D',
   card: '#FFFFFF',
   soft: '#EAF0F4',

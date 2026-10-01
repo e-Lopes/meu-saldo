@@ -157,7 +157,10 @@ function Home({
               accessibilityRole="button"
               accessibilityLabel={`${g.category.name}: ${money(g.cents)}. Ver lançamentos.`}
               onPress={() => openHistory(g.category.id)}
-              style={[s.card, { width: '47%', flexGrow: 1, minWidth: 135 }]}
+              style={({ pressed }) => [
+                s.card,
+                { width: '47%', flexGrow: 1, minWidth: 135, opacity: pressed ? 0.65 : 1 },
+              ]}
             >
               <CategoryIcon category={g.category} />
               <Text style={s.text}>{g.category.name}</Text>

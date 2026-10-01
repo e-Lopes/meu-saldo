@@ -14,6 +14,8 @@ Centavos e somas precisam ser inteiros seguros em JavaScript. Um backup com soma
 
 Datas são strings civis YYYY-MM-DD. O mês é obtido diretamente da string; não usamos ISO/UTC para atribuir lançamentos ao mês.
 
+A versão 1.4.0 adiciona preferências em `app_preferences` para tema, ocultação e data da última exportação. Elas não mudam o formato financeiro, não são incluídas no backup JSON e ficam separadas de `app_updates`. Instalar sobre a versão anterior preserva os registros; escolher um tema não regrava o arquivo financeiro.
+
 ## Recursos Android mantidos
 
 - Exportação e importação pelo Storage Access Framework, sem permissão ampla de armazenamento.

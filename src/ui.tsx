@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import { Pressable, Text, TextInput, TextInputProps, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Category, categoryColor, monthName, today } from './finance';
 
@@ -18,7 +18,7 @@ export function Button({
   secondary?: boolean;
   danger?: boolean;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s } = useAppearance();
   return (
     <Pressable
       accessibilityRole="button"
@@ -55,7 +55,7 @@ export function IconButton({
   onPress: () => void;
   disabled?: boolean;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s } = useAppearance();
   return (
     <Pressable
       onPress={onPress}
@@ -91,7 +91,7 @@ export function Chip({
   label?: string;
   disabled?: boolean;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s } = useAppearance();
   return (
     <Pressable
       accessibilityRole="button"
@@ -136,7 +136,7 @@ export function CategoryIcon({
   category: Pick<Category, 'color' | 'icon'>;
   size?: number;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s } = useAppearance();
   const color = categoryColor(category.color);
   return (
     <View
@@ -152,7 +152,7 @@ export function CategoryIcon({
       <Ionicons
         name={categoryIcons[category.icon] ?? 'shapes-outline'}
         size={size * 0.55}
-        color={color}
+        color={palette.navy}
       />
     </View>
   );
@@ -169,7 +169,7 @@ export function Field({
   helper?: string;
   inputRef?: React.Ref<TextInput>;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s } = useAppearance();
   return (
     <View>
       <Text style={s.label}>{label}</Text>
@@ -198,7 +198,7 @@ export function MonthSelector({
   onShift: (delta: number) => void;
   onCurrent: () => void;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s } = useAppearance();
   return (
     <View>
       <View style={[s.row, { justifyContent: 'space-between' }]}>
@@ -221,7 +221,7 @@ export function Empty({
   title?: string;
   text?: string;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s } = useAppearance();
   return (
     <View style={[s.card, { alignItems: 'center', paddingVertical: 30 }]}>
       <Ionicons name="wallet-outline" color={palette.teal} size={40} />
