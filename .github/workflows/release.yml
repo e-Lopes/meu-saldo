@@ -23,6 +23,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
+      - uses: android-actions/setup-android@v3
       - name: Configurar assinatura original
         env:
           MEUSALDO_KEYSTORE_BASE64: ${{ secrets.MEUSALDO_KEYSTORE_BASE64 }}
