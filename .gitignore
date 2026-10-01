@@ -8,3 +8,11 @@ keystore.properties
 *.keystore
 .idea/
 .dist/
+node_modules/
+.expo/
+/android/
+/ios/
+expo-env.d.ts
+*.tsbuildinfo
+__pycache__/
+*.pyc

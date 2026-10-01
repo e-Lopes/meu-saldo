@@ -1,9 +1,9 @@
-Atualizações pelo próprio Meu Saldo
+Meu Saldo 1.3.0 — migração para Expo
 
-- Busca automática por novas versões ao abrir o app, no máximo a cada 6 horas.
-- Botão para verificar manualmente as atualizações no Menu.
-- Download com progresso e possibilidade de cancelar.
-- Verificação de integridade, versão, identificador e assinatura antes da instalação.
-- Lançamentos e categorias continuam locais; a atualização não substitui seu arquivo financeiro.
+- Interface Android em React Native e TypeScript com Expo.
+- Início, lançamentos, categorias, histórico com filtros e gráficos dos últimos seis meses.
+- Backup e restauração JSON pelo seletor de arquivos do Android.
+- Atualizações pelo GitHub Releases com verificação da assinatura original.
+- Mesmo identificador, assinatura, arquivo saldo.json e formato de dados das versões anteriores.
 
-Instale sobre a versão anterior, sem desinstalar. Na primeira atualização pelo app, autorize o Meu Saldo a instalar aplicativos e confirme no Android. As versões 1.0 e 1.1 precisam instalar esta versão manualmente uma vez para receber o atualizador.
+Instale sobre a versão anterior, sem desinstalar. O app continua gratuito e funciona offline; a conexão é usada apenas para buscar e baixar atualizações. A instalação da nova versão precisa da confirmação do Android.

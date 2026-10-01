@@ -15,13 +15,17 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
       - uses: android-actions/setup-android@v3
         with:
@@ -34,10 +38,15 @@ jobs:
           MEUSALDO_KEY_ALIAS: ${{ secrets.MEUSALDO_KEY_ALIAS }}
           MEUSALDO_KEY_PASSWORD: ${{ secrets.MEUSALDO_KEY_PASSWORD }}
         run: python scripts/configure_ci_signing.py
+      - name: Preparar projeto Expo
+        run: |
+          npm ci
+          npm run typecheck
+          npx expo prebuild --platform android --no-install
       - name: Compilar APK sem executar testes
         run: |
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0' >/dev/null
-          bash ./gradlew --no-daemon assembleRelease --console=plain
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0' >/dev/null
+          bash ./android/gradlew -p android --no-daemon assembleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a --console=plain
       - name: Preparar APK e informações de atualização
         env:
           REF_TYPE: ${{ github.ref_type }}
@@ -46,9 +55,9 @@ jobs:
           args=()
           if [ "$REF_TYPE" = tag ]; then args+=(--tag "$REF_NAME"); fi
           python scripts/prepare_release.py \
-            --apk app/build/outputs/apk/release/app-release.apk \
-            --aapt "$ANDROID_HOME/build-tools/35.0.0/aapt" \
-            --apksigner "$ANDROID_HOME/build-tools/35.0.0/apksigner" \
+            --apk android/app/build/outputs/apk/release/app-release.apk \
+            --aapt "$ANDROID_HOME/build-tools/36.0.0/aapt" \
+            --apksigner "$ANDROID_HOME/build-tools/36.0.0/apksigner" \
             "${args[@]}"
       - name: Publicar release completa
         env:

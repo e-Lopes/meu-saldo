@@ -21,9 +21,14 @@ def main():
     args = parser.parse_args()
     if args.repository != 'e-Lopes/meu-saldo':
         raise SystemExit('Repository must match the update URL compiled into the app.')
-    build = (ROOT / 'app/build.gradle.kts').read_text(encoding='utf-8')
-    version = re.search(r'versionName\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+)"', build).group(1)
-    code = int(re.search(r'versionCode\s*=\s*(\d+)', build).group(1))
+    config = json.loads((ROOT / 'app.json').read_text(encoding='utf-8'))['expo']
+    version = config['version']
+    code = config['android']['versionCode']
+    package = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))
+    if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', version) or package['version'] != version:
+        raise SystemExit('Keep app.json and package.json versions aligned using X.Y.Z.')
+    if config['android']['package'] != 'br.com.meusaldo' or not isinstance(code, int) or code < 1:
+        raise SystemExit('Keep the original package and use a positive Android versionCode.')
     tag = f'v{version}'
     if args.tag and args.tag != tag:
         raise SystemExit(f'Tag must be {tag}; update the Android version before publishing.')
@@ -31,6 +36,10 @@ def main():
     if not re.search(rf"package: name='br.com.meusaldo' versionCode='{code}' versionName='{re.escape(version)}'", badging):
         raise SystemExit('APK and source versions do not match.')
     minimum = int(re.search(r"sdkVersion:'(\d+)'", badging).group(1))
+    if minimum != 26:
+        raise SystemExit('The APK must continue supporting Android 8 (minSdk 26).')
+    if args.apk.stat().st_size > 100_000_000:
+        raise SystemExit('APK exceeds the 100 MB limit supported by the version 1.2 updater.')
     certs = subprocess.check_output([str(Path(args.apksigner).resolve()), 'verify', '--print-certs', str(args.apk.resolve())], text=True, encoding='utf-8')
     fingerprint = re.search(r'Signer #1 certificate SHA-256 digest: ([a-fA-F0-9]{64})', certs).group(1).lower()
     expected = (ROOT / 'release/signing-certificate.sha256').read_text().strip().lower()
