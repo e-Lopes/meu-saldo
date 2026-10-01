@@ -4,6 +4,11 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publicar release após compilar
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -46,7 +51,7 @@ jobs:
       - name: Compilar APK sem executar testes
         run: |
           sdkmanager 'platforms;android-36' 'build-tools;36.0.0' >/dev/null
-          bash ./android/gradlew -p android --no-daemon assembleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a --console=plain
+          bash ./android/gradlew -p android --no-daemon assembleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86_64 --console=plain
       - name: Preparar APK e informações de atualização
         env:
           REF_TYPE: ${{ github.ref_type }}
@@ -60,6 +65,7 @@ jobs:
             --apksigner "$ANDROID_HOME/build-tools/36.0.0/apksigner" \
             "${args[@]}"
       - name: Publicar release completa
+        if: github.ref_type == 'tag' || inputs.publish
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -71,6 +77,13 @@ jobs:
           fi
           gh release create "$tag" .dist/release/meu-saldo.apk .dist/release/update.json \
             --target "$GITHUB_SHA" --title "Meu Saldo ${tag#v}" --notes-file release/notes.md --latest
+      - name: Disponibilizar APK para validação manual
+        if: github.ref_type != 'tag' && !inputs.publish
+        uses: actions/upload-artifact@v4
+        with:
+          name: meu-saldo-candidate
+          path: .dist/release/
+          retention-days: 7
       - name: Remover credenciais do runner
         if: always()
         run: rm -f -- .tools/github-release.jks keystore.properties

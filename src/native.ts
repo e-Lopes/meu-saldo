@@ -13,6 +13,12 @@ declare class SaldoModule extends NativeModule<NativeEvents> {
   versionName: string;
   readLedger(): Promise<string | null>;
   writeLedger(text: string): Promise<void>;
+  getPreferences(): Promise<{
+    theme: 'system' | 'light' | 'dark';
+    hidden: boolean;
+    lastBackup: number;
+  }>;
+  setPreference(key: string, value: string): Promise<void>;
   exportBackup(text: string, name: string): Promise<boolean>;
   importBackup(): Promise<string | null>;
   checkUpdate(manual: boolean): Promise<{ release: Release | null; message: string }>;

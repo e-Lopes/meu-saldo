@@ -1,8 +1,9 @@
+import { useAppearance } from './Appearance';
 import React, { useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Category, categoryColor, colors, icons, id, Ledger } from './finance';
-import { Button, CategoryIcon, Chip, Field, IconButton, palette, s } from './ui';
+import { Button, CategoryIcon, Chip, Field, IconButton } from './ui';
 import { errorMessage } from './useLedger';
 
 export function CategoryScreen({
@@ -14,12 +15,26 @@ export function CategoryScreen({
   mutate: (change: (l: Ledger) => Ledger) => Promise<void>;
   onClose: () => void;
 }) {
+  const { palette, s, money, hidden } = useAppearance();
   const [editing, setEditing] = useState<Category | null | undefined>();
   const [name, setName] = useState('');
   const [color, setColor] = useState(colors[0]);
   const [icon, setIcon] = useState(icons[0]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
+  const counts = new Map<string, number>();
+  for (const entry of ledger.entries)
+    if (entry.categoryId) counts.set(entry.categoryId, (counts.get(entry.categoryId) ?? 0) + 1);
+  const matching = ledger.categories
+    .filter((c) =>
+      c.name.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  const visibleCategories = matching
+    .filter((c) => !c.archived || showArchived || !!search.trim())
+    .sort((a, b) => Number(a.archived) - Number(b.archived));
   function edit(c: Category | null) {
     setEditing(c);
     setName(c?.name ?? '');
@@ -88,8 +103,18 @@ export function CategoryScreen({
   }
   const close = () => {
     if (busy) return;
-    if (editing !== undefined) setEditing(undefined);
-    else onClose();
+    if (editing !== undefined) {
+      const changed =
+        name !== (editing?.name ?? '') ||
+        color !== (editing?.color ?? colors[0]) ||
+        icon !== (editing?.icon ?? icons[0]);
+      if (changed)
+        Alert.alert('Descartar alterações?', 'As alterações da categoria ainda não foram salvas.', [
+          { text: 'Continuar editando', style: 'cancel' },
+          { text: 'Descartar', style: 'destructive', onPress: () => setEditing(undefined) },
+        ]);
+      else setEditing(undefined);
+    } else onClose();
   };
   return (
     <Modal visible animationType="slide" onRequestClose={close}>
@@ -100,7 +125,7 @@ export function CategoryScreen({
             label="Voltar"
             onPress={close}
           />
-          <Text style={s.title}>
+          <Text accessibilityRole="header" style={[s.title, { flex: 1 }]}>
             {editing === undefined ? 'Categorias' : editing ? 'Editar categoria' : 'Nova categoria'}
           </Text>
         </View>
@@ -108,46 +133,83 @@ export function CategoryScreen({
           {editing === undefined ? (
             <>
               <Button title="Criar categoria" onPress={() => edit(null)} disabled={busy} />
-              {ledger.categories.map((c) => (
-                <View key={c.id} style={s.card}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Editar ${c.name}`}
-                    onPress={() => edit(c)}
-                    style={s.row}
-                  >
-                    <CategoryIcon category={c} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.heading}>{c.name}</Text>
-                      <Text style={s.muted}>{c.archived ? 'Arquivada' : 'Ativa'}</Text>
-                    </View>
-                    <Text style={{ color: palette.teal }}>Editar</Text>
-                  </Pressable>
-                  {c.archived ? (
-                    <Button
-                      secondary
-                      title="Reativar"
-                      disabled={busy}
-                      onPress={() =>
-                        void run((l) => ({
-                          ...l,
-                          categories: l.categories.map((v) =>
-                            v.id === c.id ? { ...v, archived: false } : v,
-                          ),
-                        }))
-                      }
-                    />
-                  ) : (
-                    <Button
-                      secondary
-                      title={
-                        ledger.entries.some((e) => e.categoryId === c.id) ? 'Arquivar' : 'Excluir'
-                      }
-                      disabled={busy}
-                      onPress={() => remove(c)}
-                    />
+              <Field
+                label="Buscar categoria"
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Nome da categoria"
+              />
+              <Text accessibilityRole="header" style={s.heading}>
+                Ativas ({matching.filter((c) => !c.archived).length})
+              </Text>
+              {!matching.some((c) => !c.archived) && (
+                <Text style={s.muted}>
+                  {search
+                    ? 'Nenhuma categoria ativa encontrada.'
+                    : 'Crie uma categoria para organizar suas despesas.'}
+                </Text>
+              )}
+              <Chip selected={showArchived} onPress={() => setShowArchived((v) => !v)}>
+                {showArchived ? 'Recolher arquivadas' : 'Ver arquivadas'} (
+                {matching.filter((c) => c.archived).length})
+              </Chip>
+              {visibleCategories.map((c, index) => (
+                <React.Fragment key={c.id}>
+                  {c.archived && !visibleCategories[index - 1]?.archived && (
+                    <Text accessibilityRole="header" style={s.heading}>
+                      Arquivadas
+                    </Text>
                   )}
-                </View>
+                  <View style={s.card}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Editar ${c.name}`}
+                      onPress={() => edit(c)}
+                      disabled={busy}
+                      style={({ pressed }) => [
+                        s.row,
+                        { minHeight: 48, opacity: pressed ? 0.65 : 1 },
+                      ]}
+                    >
+                      <CategoryIcon category={c} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.heading}>{c.name}</Text>
+                        <Text style={s.muted}>{c.archived ? 'Arquivada' : 'Ativa'}</Text>
+                        <Text style={s.muted}>
+                          {counts.get(c.id) ?? 0}{' '}
+                          {(counts.get(c.id) ?? 0) === 1
+                            ? 'lançamento associado'
+                            : 'lançamentos associados'}
+                        </Text>
+                      </View>
+                      <Text style={{ color: palette.teal }}>Editar</Text>
+                    </Pressable>
+                    {c.archived ? (
+                      <Button
+                        secondary
+                        title="Reativar"
+                        disabled={busy}
+                        onPress={() =>
+                          void run((l) => ({
+                            ...l,
+                            categories: l.categories.map((v) =>
+                              v.id === c.id ? { ...v, archived: false } : v,
+                            ),
+                          }))
+                        }
+                      />
+                    ) : (
+                      <Button
+                        secondary
+                        title={
+                          ledger.entries.some((e) => e.categoryId === c.id) ? 'Arquivar' : 'Excluir'
+                        }
+                        disabled={busy}
+                        onPress={() => remove(c)}
+                      />
+                    )}
+                  </View>
+                </React.Fragment>
               ))}
               <Text style={s.muted}>
                 Categorias com lançamentos são arquivadas para preservar o histórico.
@@ -162,6 +224,7 @@ export function CategoryScreen({
                 maxLength={60}
                 placeholder="Nome da categoria"
                 editable={!busy}
+                autoFocus
               />
               <Text style={s.label}>Cor</Text>
               <View style={s.wrap}>
@@ -172,6 +235,7 @@ export function CategoryScreen({
                     accessibilityRole="button"
                     accessibilityLabel={`Cor ${categoryColor(v)}`}
                     accessibilityState={{ selected: color === v }}
+                    disabled={busy}
                     style={{
                       width: 48,
                       height: 48,
@@ -186,7 +250,13 @@ export function CategoryScreen({
               <Text style={s.label}>Ícone</Text>
               <View style={s.wrap}>
                 {icons.map((v) => (
-                  <Chip key={v} selected={icon === v} onPress={() => setIcon(v)}>
+                  <Chip
+                    key={v}
+                    label={`Ícone ${['Alimentação', 'Transporte', 'Casa', 'Lazer', 'Outros', 'Trabalho', 'Compras', 'Saúde'][icons.indexOf(v)] ?? v}`}
+                    disabled={busy}
+                    selected={icon === v}
+                    onPress={() => setIcon(v)}
+                  >
                     <CategoryIcon category={{ icon: v, color }} size={30} />
                   </Chip>
                 ))}

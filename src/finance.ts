@@ -31,6 +31,14 @@ export const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+export const initialEntryDate = (month: string) => {
+  const current = today();
+  if (current.slice(0, 7) === month) return current;
+  const [year, number] = month.split('-').map(Number);
+  const last = new Date(0);
+  last.setFullYear(year, number, 0);
+  return `${month}-${String(Math.min(Number(current.slice(8)), last.getDate())).padStart(2, '0')}`;
+};
 export const shiftMonth = (month: string, delta: number) => {
   const [y, m] = month.split('-').map(Number);
   const d = new Date(0);

@@ -1,3 +1,4 @@
+import { useAppearance, Colors } from './Appearance';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -6,13 +7,12 @@ import {
   categoryColor,
   groups,
   Ledger,
-  money,
   monthEntries,
   monthName,
   shiftMonth,
   totals,
 } from './finance';
-import { CategoryIcon, Chip, Empty, palette, s } from './ui';
+import { CategoryIcon, Chip, Empty } from './ui';
 
 const percentage = (value: number) => `${value.toFixed(1).replace('.', ',')}%`;
 const shortMonth = (value: string) => monthName(value).split(' ')[0].slice(0, 3);
@@ -34,6 +34,7 @@ export function Charts({
   month: string;
   onCategory: (id: string) => void;
 }) {
+  const { palette, s, money, hidden } = useAppearance();
   const [view, setView] = useState<'categories' | 'trend'>('categories');
   // Reset month-specific selection when navigating to a different reporting period.
   return (
@@ -64,6 +65,8 @@ function CategoryChart({
   month: string;
   onCategory: (id: string) => void;
 }) {
+  const { palette, s, money, hidden } = useAppearance();
+  const styles = chartStyles(palette);
   const rows = groups(ledger, month);
   const summary = totals(monthEntries(ledger, month));
   const [details, setDetails] = useState(false);
@@ -77,7 +80,7 @@ function CategoryChart({
         {rows[0] ? (
           <Text style={s.text}>
             <Text style={{ fontWeight: '700' }}>{rows[0].category.name}</Text> concentra{' '}
-            {percentage(rows[0].percentage)} dos seus gastos.
+            {hidden ? '••••' : percentage(rows[0].percentage)} dos seus gastos.
           </Text>
         ) : (
           <Text style={s.muted}>Seu resumo aparece assim que você registrar uma despesa.</Text>
@@ -96,7 +99,7 @@ function CategoryChart({
             <Pressable
               key={g.category.id}
               accessibilityRole="button"
-              accessibilityLabel={`${g.category.name}, ${money(g.cents)}, ${percentage(g.percentage)} das despesas. Ver lançamentos.`}
+              accessibilityLabel={`${g.category.name}, ${money(g.cents)}, ${hidden ? 'valores ocultos' : percentage(g.percentage)} das despesas. Ver lançamentos.`}
               onPress={() => onCategory(g.category.id)}
               style={({ pressed }) => [styles.category, { opacity: pressed ? 0.65 : 1 }]}
             >
@@ -107,14 +110,14 @@ function CategoryChart({
               </View>
               <View style={[s.wrap, { justifyContent: 'space-between', gap: 4 }]}>
                 <Text style={s.heading}>{money(g.cents)}</Text>
-                <Text style={s.muted}>{percentage(g.percentage)} do total</Text>
+                <Text style={s.muted}>{hidden ? '••••' : percentage(g.percentage)} do total</Text>
               </View>
               <View style={styles.track}>
                 <View
                   style={{
                     height: 8,
                     borderRadius: 4,
-                    width: `${g.percentage}%`,
+                    width: hidden ? '0%' : `${g.percentage}%`,
                     backgroundColor: categoryColor(g.category.color),
                   }}
                 />
@@ -143,55 +146,58 @@ function CategoryChart({
               <Text style={s.muted}>
                 A linha soma a participação de cada categoria, na ordem acima, até chegar a 100%.
               </Text>
-              <Svg width={width} height={175} accessible={false}>
-                {[0, 50, 100].map((p) => (
-                  <React.Fragment key={p}>
-                    <Line
-                      x1={36}
-                      x2={width - 12}
-                      y1={145 - p * 1.2}
-                      y2={145 - p * 1.2}
-                      stroke={palette.border}
-                    />
-                    <SvgText x={0} y={149 - p * 1.2} fontSize={10} fill={palette.muted}>
-                      {p}%
-                    </SvgText>
-                  </React.Fragment>
-                ))}
-                <Polyline
-                  points={rows
-                    .map(
-                      (g, i) =>
-                        `${36 + (plotWidth * (i + 0.5)) / rows.length},${145 - g.cumulative * 1.2}`,
-                    )
-                    .join(' ')}
-                  fill="none"
-                  stroke={palette.teal}
-                  strokeWidth={3}
-                />
-                {rows.map((g, i) => (
-                  <React.Fragment key={g.category.id}>
-                    <Circle
-                      cx={36 + (plotWidth * (i + 0.5)) / rows.length}
-                      cy={145 - g.cumulative * 1.2}
-                      r={4}
-                      fill={palette.teal}
-                    />
-                    <SvgText
-                      x={36 + (plotWidth * (i + 0.5)) / rows.length}
-                      y={164}
-                      fontSize={10}
-                      fill={palette.muted}
-                      textAnchor="middle"
-                    >
-                      {i + 1}
-                    </SvgText>
-                  </React.Fragment>
-                ))}
-              </Svg>
+              {!hidden && (
+                <Svg width={width} height={175} accessible={false}>
+                  {[0, 50, 100].map((p) => (
+                    <React.Fragment key={p}>
+                      <Line
+                        x1={36}
+                        x2={width - 12}
+                        y1={145 - p * 1.2}
+                        y2={145 - p * 1.2}
+                        stroke={palette.border}
+                      />
+                      <SvgText x={0} y={149 - p * 1.2} fontSize={10} fill={palette.muted}>
+                        {p}%
+                      </SvgText>
+                    </React.Fragment>
+                  ))}
+                  <Polyline
+                    points={rows
+                      .map(
+                        (g, i) =>
+                          `${36 + (plotWidth * (i + 0.5)) / rows.length},${145 - g.cumulative * 1.2}`,
+                      )
+                      .join(' ')}
+                    fill="none"
+                    stroke={palette.teal}
+                    strokeWidth={3}
+                  />
+                  {rows.map((g, i) => (
+                    <React.Fragment key={g.category.id}>
+                      <Circle
+                        cx={36 + (plotWidth * (i + 0.5)) / rows.length}
+                        cy={145 - g.cumulative * 1.2}
+                        r={4}
+                        fill={palette.teal}
+                      />
+                      <SvgText
+                        x={36 + (plotWidth * (i + 0.5)) / rows.length}
+                        y={164}
+                        fontSize={10}
+                        fill={palette.muted}
+                        textAnchor="middle"
+                      >
+                        {i + 1}
+                      </SvgText>
+                    </React.Fragment>
+                  ))}
+                </Svg>
+              )}
               {rows.map((g, i) => (
                 <Text key={g.category.id} style={s.muted}>
-                  {i + 1}. {g.category.name} · acumulado {percentage(g.cumulative)}
+                  {i + 1}. {g.category.name} · acumulado{' '}
+                  {hidden ? '••••' : percentage(g.cumulative)}
                 </Text>
               ))}
             </View>
@@ -203,6 +209,8 @@ function CategoryChart({
 }
 
 function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
+  const { palette, s, money, hidden } = useAppearance();
+  const styles = chartStyles(palette);
   const months = Array.from({ length: 6 }, (_, i) => {
     const key = shiftMonth(month, i - 5);
     return { key, ...totals(monthEntries(ledger, key)) };
@@ -226,61 +234,63 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
       </View>
       {hasData ? (
         <>
-          <Svg width={width} height={185} accessible={false}>
-            {[0, 0.5, 1].map((p) => (
-              <React.Fragment key={p}>
-                <Line
-                  x1={left}
-                  x2={width}
-                  y1={165 - p * 140}
-                  y2={165 - p * 140}
-                  stroke={palette.border}
-                />
-                <SvgText x={0} y={169 - p * 140} fontSize={10} fill={palette.muted}>
-                  {axisMoney(maximum * p)}
-                </SvgText>
-              </React.Fragment>
-            ))}
-            {months.map((m, i) => {
-              const step = plotWidth / 6;
-              const bar = Math.min(14, step * 0.28);
-              const x = left + step * (i + 0.5);
-              return (
-                <G key={m.key} onPress={() => setSelected(m.key)}>
-                  <Rect x={left + step * i} y={15} width={step} height={150} fill="transparent" />
-                  {selected === m.key && (
-                    <Rect
-                      x={left + step * i + 1}
-                      y={15}
-                      width={Math.max(1, step - 2)}
-                      height={150}
-                      rx={6}
-                      fill="#E9F4F1"
-                    />
-                  )}
-                  <Rect
-                    x={x - bar - 1}
-                    y={165 - (m.income / maximum) * 140}
-                    width={bar}
-                    height={(m.income / maximum) * 140}
-                    rx={3}
-                    fill={palette.income}
+          {!hidden && (
+            <Svg width={width} height={185} accessible={false}>
+              {[0, 0.5, 1].map((p) => (
+                <React.Fragment key={p}>
+                  <Line
+                    x1={left}
+                    x2={width}
+                    y1={165 - p * 140}
+                    y2={165 - p * 140}
+                    stroke={palette.border}
                   />
-                  <Rect
-                    x={x + 1}
-                    y={165 - (m.expense / maximum) * 140}
-                    width={bar}
-                    height={(m.expense / maximum) * 140}
-                    rx={3}
-                    fill={palette.expense}
-                  />
-                  <SvgText x={x} y={181} fontSize={10} textAnchor="middle" fill={palette.muted}>
-                    {shortMonth(m.key)}
+                  <SvgText x={0} y={169 - p * 140} fontSize={10} fill={palette.muted}>
+                    {axisMoney(maximum * p)}
                   </SvgText>
-                </G>
-              );
-            })}
-          </Svg>
+                </React.Fragment>
+              ))}
+              {months.map((m, i) => {
+                const step = plotWidth / 6;
+                const bar = Math.min(14, step * 0.28);
+                const x = left + step * (i + 0.5);
+                return (
+                  <G key={m.key} onPress={() => setSelected(m.key)}>
+                    <Rect x={left + step * i} y={15} width={step} height={150} fill="transparent" />
+                    {selected === m.key && (
+                      <Rect
+                        x={left + step * i + 1}
+                        y={15}
+                        width={Math.max(1, step - 2)}
+                        height={150}
+                        rx={6}
+                        fill={palette.selected}
+                      />
+                    )}
+                    <Rect
+                      x={x - bar - 1}
+                      y={165 - (m.income / maximum) * 140}
+                      width={bar}
+                      height={(m.income / maximum) * 140}
+                      rx={3}
+                      fill={palette.income}
+                    />
+                    <Rect
+                      x={x + 1}
+                      y={165 - (m.expense / maximum) * 140}
+                      width={bar}
+                      height={(m.expense / maximum) * 140}
+                      rx={3}
+                      fill={palette.expense}
+                    />
+                    <SvgText x={x} y={181} fontSize={10} textAnchor="middle" fill={palette.muted}>
+                      {shortMonth(m.key)}
+                    </SvgText>
+                  </G>
+                );
+              })}
+            </Svg>
+          )}
           <View style={[s.wrap, { gap: 8 }]}>
             {months.map((m) => (
               <Pressable
@@ -316,7 +326,7 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
             <Detail
               label="Saldo do mês"
               value={money(current.balance)}
-              color={current.balance < 0 ? palette.expense : palette.navy}
+              color={!hidden && current.balance < 0 ? palette.expense : palette.navy}
             />
           </View>
         </>
@@ -334,6 +344,7 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
 }
 
 function Detail({ label, value, color }: { label: string; value: string; color: string }) {
+  const { palette, s, money, hidden } = useAppearance();
   return (
     <View style={[s.wrap, { justifyContent: 'space-between', gap: 4 }]}>
       <Text style={s.text}>{label}</Text>
@@ -342,6 +353,7 @@ function Detail({ label, value, color }: { label: string; value: string; color: 
   );
 }
 function Legend({ color, label }: { color: string; label: string }) {
+  const { palette, s, money, hidden } = useAppearance();
   return (
     <View style={s.row}>
       <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
@@ -349,22 +361,23 @@ function Legend({ color, label }: { color: string; label: string }) {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  summary: { backgroundColor: '#E5F1EF', borderRadius: 20, padding: 20, gap: 8 },
-  amount: { color: palette.navy, fontSize: 30, fontWeight: '700' },
-  category: { paddingVertical: 10, gap: 10, minHeight: 48 },
-  track: { height: 8, backgroundColor: '#EDF1F4', borderRadius: 4, overflow: 'hidden' },
-  disclosure: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 },
-  month: {
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-    borderRadius: 12,
-    minHeight: 44,
-    minWidth: '28%',
-    flexGrow: 1,
-    alignItems: 'center',
-    backgroundColor: '#F3F6F8',
-  },
-  selectedMonth: { backgroundColor: '#E5F3F0', borderWidth: 1, borderColor: palette.teal },
-  monthDetails: { backgroundColor: '#F3F6F8', borderRadius: 16, padding: 16, gap: 12 },
-});
+const chartStyles = (palette: Colors) =>
+  StyleSheet.create({
+    summary: { backgroundColor: palette.selected, borderRadius: 20, padding: 20, gap: 8 },
+    amount: { color: palette.navy, fontSize: 30, fontWeight: '700' },
+    category: { paddingVertical: 10, gap: 10, minHeight: 48 },
+    track: { height: 8, backgroundColor: palette.track, borderRadius: 4, overflow: 'hidden' },
+    disclosure: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 },
+    month: {
+      paddingHorizontal: 10,
+      paddingVertical: 12,
+      borderRadius: 12,
+      minHeight: 44,
+      minWidth: '28%',
+      flexGrow: 1,
+      alignItems: 'center',
+      backgroundColor: palette.background,
+    },
+    selectedMonth: { backgroundColor: palette.selected, borderWidth: 1, borderColor: palette.teal },
+    monthDetails: { backgroundColor: palette.background, borderRadius: 16, padding: 16, gap: 12 },
+  });

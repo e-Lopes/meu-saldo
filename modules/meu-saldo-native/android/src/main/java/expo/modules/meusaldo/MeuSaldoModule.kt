@@ -6,6 +6,8 @@ import android.net.Uri
 import android.provider.Settings
 import android.util.AtomicFile
 import androidx.core.content.FileProvider
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.functions.Coroutine
 import expo.modules.kotlin.functions.Queues
@@ -30,11 +32,26 @@ class MeuSaldoModule : Module() {
   private val context get() = requireNotNull(appContext.reactContext) { "Aplicativo indisponível." }
   private val updates by lazy { LocalUpdates(context) }
   private fun ledgerFile() = AtomicFile(File(context.filesDir, "saldo.json"))
+  private val preferences get() = context.getSharedPreferences("app_preferences", android.content.Context.MODE_PRIVATE)
 
   override fun definition() = ModuleDefinition {
     Name("MeuSaldoNative")
     Events("updateProgress")
     Constant("versionName") { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "" }
+    AsyncFunction("getPreferences") {
+      applyTheme()
+      mapOf("theme" to preferences.getString("theme", "system"), "hidden" to preferences.getBoolean("hidden", false), "lastBackup" to preferences.getLong("lastBackup", 0))
+    }
+    AsyncFunction("setPreference") { key: String, value: String ->
+      val editor = preferences.edit()
+      when (key) {
+        "theme" -> { require(value in listOf("system", "light", "dark")); editor.putString(key, value) }
+        "hidden" -> { require(value == "true" || value == "false"); editor.putBoolean(key, value == "true") }
+        else -> error("Preferência inválida.")
+      }
+      require(editor.commit()) { "Não foi possível salvar a preferência." }
+      if (key == "theme") applyTheme()
+    }
 
     AsyncFunction("readLedger") {
       synchronized(storageLock) {
@@ -79,6 +96,9 @@ class MeuSaldoModule : Module() {
               if (result.requestCode == EXPORT_REQUEST) {
                 context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(requireNotNull(text).toByteArray(Charsets.UTF_8)) }
                   ?: error("Não foi possível abrir o destino do backup.")
+                require(preferences.edit().putLong("lastBackup", System.currentTimeMillis()).commit()) {
+                  "A cópia foi salva, mas não foi possível registrar a data da exportação."
+                }
                 promise.resolve(true)
               } else {
                 val imported = context.contentResolver.openInputStream(uri)?.use { readLimited(it) }
@@ -120,6 +140,17 @@ class MeuSaldoModule : Module() {
       pickerPromise = null; exportText = null
       backupWorker.shutdown()
     }
+  }
+
+  @Suppress("DEPRECATION")
+  private fun applyTheme() {
+    val activity = appContext.currentActivity as? AppCompatActivity ?: return
+    val mode = when (preferences.getString("theme", "system")) {
+      "dark" -> AppCompatDelegate.MODE_NIGHT_YES
+      "light" -> AppCompatDelegate.MODE_NIGHT_NO
+      else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+    }
+    activity.runOnUiThread { activity.delegate.localNightMode = mode }
   }
 
   @Suppress("DEPRECATION")

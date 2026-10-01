@@ -8,6 +8,10 @@ O aplicativo possui início com saldo mensal, cadastro e edição de receitas/de
 
 Os Gráficos oferecem gastos por categoria com acesso ao Histórico e evolução dos seis meses com seleção de período. O Menu destaca a privacidade e reúne categorias, atualizações, ajuda e cópia de segurança em opções expansíveis.
 
+Temas claro, escuro e do sistema e ocultação de valores ficam salvos localmente. O Histórico usa lista virtualizada, mostra o saldo filtrado e preserva filtros ao editar. Categorias têm busca, contagem de lançamentos e seção de arquivadas. Exclusões podem ser desfeitas por 15 segundos, ampliados conforme a configuração de acessibilidade do Android.
+
+Novos lançamentos começam no mês visualizado, com data ajustável. O formulário mantém Salvar acessível com o teclado aberto e mostra erros junto ao campo. As abas preservam o mês escolhido e oferecem um atalho ao mês atual.
+
 A navegação usa tabs de Início/Histórico/Gráficos/Menu e telas modais para lançamentos e categorias. A orientação é fixa em retrato. A imagem `imagem-ilustrativa.jpg` é apenas referência visual.
 
 O app instalado funciona offline. Não possui API financeira, autenticação, banco de dados, Google Drive, anúncios ou analytics. A internet é usada somente para verificar versões e baixar APKs.
@@ -74,7 +78,9 @@ Não há suíte de testes no projeto migrado. A validação das telas e do uso n
 App.tsx                            navegação e composição das telas
 index.ts                           entrada Expo
 src/
-  ui.tsx                           tokens e componentes reutilizáveis
+  Appearance.tsx                   temas e preferências locais
+  ui.tsx                           componentes reutilizáveis
+  HistoryScreen.tsx                histórico virtualizado e filtros
   EntryForm.tsx                    formulário e calendário
   CategoryScreen.tsx               gerenciamento de categorias
   Charts.tsx                       gráficos e valores em texto
@@ -101,6 +107,10 @@ Backup automático e transferência automática do Android estão desativados. *
 
 O backup JSON não é criptografado: quem tiver acesso ao arquivo poderá ler os registros. A restauração valida o arquivo, mostra um resumo e exige confirmação antes de substituir os dados.
 
+Tema, ocultação de valores e data da última exportação ficam em `SharedPreferences/app_preferences`, separados de `saldo.json` e do backup financeiro. A data é registrada depois de concluir a escrita; cancelamentos e falhas não registram sucesso. Ela não comprova que o arquivo ainda exista. Após 14 dias sem exportação, o Menu mostra um lembrete discreto se houver lançamentos.
+
+Ocultar valores mascara quantias e percentuais nas três telas financeiras, inclusive nos rótulos de acessibilidade, e esconde os desenhos dos gráficos. Abrir um lançamento para editar revela seu valor no formulário. A ocultação protege a visualização cotidiana; não criptografa o arquivo ou o backup.
+
 O GitHub recebe os dados normais das requisições de atualização, como IP e versão do app. Nenhum registro financeiro ou backup é enviado.
 
 ## APK, distribuição e atualizações
@@ -117,7 +127,7 @@ Para compilar um release local, mantenha a chave original e `keystore.properties
 
 ```powershell
 npx expo prebuild --platform android --no-install
-.\android\gradlew.bat -p android assembleRelease '-PreactNativeArchitectures=armeabi-v7a,arm64-v8a'
+.\android\gradlew.bat -p android assembleRelease '-PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86_64'
 ```
 
 APK: `android/app/build/outputs/apk/release/app-release.apk`. O plugin recusa um build release sem a configuração da assinatura.

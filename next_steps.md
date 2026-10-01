@@ -1,6 +1,6 @@
 # Próximos passos — Meu Saldo
 
-Recomendações para evoluir o aplicativo mantendo Android, dados locais, gratuidade e distribuição por APK. Este arquivo é um roteiro; os itens abaixo não estão implementados, exceto os descritos na primeira seção.
+Roteiro da versão 1.4.0, mantendo Android, dados locais, gratuidade e distribuição por APK. Os recursos das prioridades 1, 2 e 3 foram implementados. A conferência em aparelho físico e com TalkBack continua pendente; os resultados disponíveis estão em [docs/ui-validation.md](docs/ui-validation.md).
 
 ## Melhorias desta entrega
 
@@ -22,7 +22,7 @@ Recomendações para evoluir o aplicativo mantendo Android, dados locais, gratui
 | Desfazer exclusão de lançamento | Reduzir erros em ações destrutivas | Após excluir, oferecer uma ação breve para recuperar exatamente o registro, respeitando a fila de gravação. |
 | Melhorar o formulário de valor | Acelerar cadastros frequentes | Teclado e ação de salvar acessíveis, valor fácil de corrigir e mensagens de erro junto ao campo. |
 
-Recomendação de ordem: validar as telas atuais, ajustar a data do formulário e depois implementar ocultação de valores e desfazer.
+Implementado: data alinhada ao mês; ocultação persistida separadamente; desfazer por 15 segundos (ajustado ao tempo de acessibilidade do Android); erros junto ao valor e Salvar fora da área rolável.
 
 ## Prioridade 2 — organização e acessibilidade
 
@@ -39,10 +39,8 @@ Recomendação de ordem: validar as telas atuais, ajustar a data do formulário 
 | Ideia | Quando faz sentido |
 | --- | --- |
 | Tema escuro | Depois de consolidar cores e contraste no tema atual. Salvar a preferência localmente. |
-| Metas mensais por categoria | Quando o usuário sentir falta de acompanhar limites de gastos; metas não devem bloquear lançamentos. |
-| Favoritos de lançamento | Para despesas repetidas cadastradas manualmente, sempre confirmando valor e data. |
-| Backup criptografado opcional | Quando houver necessidade de compartilhar ou guardar arquivos sensíveis; explicar a senha e a impossibilidade de recuperar uma senha perdida antes de adotar. |
-| Recorrências | Somente com regras claras para evitar duplicatas, permitir exceções e manter tudo offline. |
+
+Implementado: Sistema, Claro e Escuro no Menu, com preferências locais e calendário nativo acompanhando o tema escolhido.
 
 Não adicionar login, sincronização, API financeira ou banco de dados para resolver necessidades que o arquivo local já atende. Não migrar para EAS Update apenas por esta mudança visual: o fluxo atual de APKs assinados já preserva compatibilidade com as instalações existentes.
 

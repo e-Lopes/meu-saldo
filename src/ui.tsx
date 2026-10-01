@@ -1,61 +1,10 @@
 import React, { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Category, categoryColor, monthName } from './finance';
+import { Category, categoryColor, monthName, today } from './finance';
 
-export const palette = {
-  teal: '#328D8A',
-  navy: '#17304F',
-  background: '#F3F6F8',
-  muted: '#667487',
-  border: '#DEE6EC',
-  expense: '#C75E58',
-  income: '#25877B',
-};
-export const s = StyleSheet.create({
-  page: { flex: 1, backgroundColor: palette.background },
-  content: { padding: 20, gap: 18, paddingBottom: 30 },
-  card: { backgroundColor: 'white', padding: 18, borderRadius: 20, gap: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  title: { color: palette.navy, fontSize: 23, fontWeight: '700' },
-  heading: { color: palette.navy, fontSize: 18, fontWeight: '700' },
-  text: { color: palette.navy, fontSize: 15, lineHeight: 22 },
-  muted: { color: palette.muted, fontSize: 14, lineHeight: 21 },
-  label: { color: palette.navy, fontSize: 15, fontWeight: '600', marginBottom: 8 },
-  input: {
-    borderWidth: 1,
-    borderColor: palette.border,
-    backgroundColor: 'white',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    fontSize: 17,
-    color: palette.navy,
-    minHeight: 50,
-  },
-  button: {
-    backgroundColor: palette.teal,
-    borderRadius: 14,
-    minHeight: 48,
-    padding: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: { color: 'white', fontSize: 16, fontWeight: '600', textAlign: 'center' },
-  chip: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: palette.border,
-    backgroundColor: 'white',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  chipSelected: { borderColor: palette.teal, backgroundColor: '#E5F3F0' },
-  divider: { height: 1, backgroundColor: palette.border },
-});
+import { useAppearance } from './Appearance';
+
 export function Button({
   title,
   onPress,
@@ -69,6 +18,7 @@ export function Button({
   secondary?: boolean;
   danger?: boolean;
 }) {
+  const { palette, s, money, hidden } = useAppearance();
   return (
     <Pressable
       accessibilityRole="button"
@@ -77,8 +27,8 @@ export function Button({
       disabled={disabled}
       style={({ pressed }) => [
         s.button,
-        secondary && { backgroundColor: '#EAF0F4' },
-        danger && { backgroundColor: '#FBEDEB' },
+        secondary && { backgroundColor: palette.soft },
+        danger && { backgroundColor: palette.soft },
         { opacity: disabled ? 0.45 : pressed ? 0.75 : 1 },
       ]}
     >
@@ -98,24 +48,29 @@ export function IconButton({
   icon,
   label,
   onPress,
+  disabled = false,
 }: {
   icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
   onPress: () => void;
+  disabled?: boolean;
 }) {
+  const { palette, s, money, hidden } = useAppearance();
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled }}
       hitSlop={6}
       style={({ pressed }) => [
         {
-          minWidth: 44,
-          minHeight: 44,
+          minWidth: 48,
+          minHeight: 48,
           alignItems: 'center',
           justifyContent: 'center',
-          opacity: pressed ? 0.5 : 1,
+          opacity: disabled ? 0.4 : pressed ? 0.5 : 1,
         },
       ]}
     >
@@ -127,17 +82,28 @@ export function Chip({
   children,
   selected,
   onPress,
+  label,
+  disabled = false,
 }: {
   children: ReactNode;
   selected?: boolean;
   onPress: () => void;
+  label?: string;
+  disabled?: boolean;
 }) {
+  const { palette, s, money, hidden } = useAppearance();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ selected: !!selected }}
+      accessibilityLabel={label}
+      accessibilityState={{ selected: !!selected, disabled }}
+      disabled={disabled}
       onPress={onPress}
-      style={[s.chip, selected && s.chipSelected]}
+      style={({ pressed }) => [
+        s.chip,
+        selected && s.chipSelected,
+        { opacity: disabled ? 0.4 : pressed ? 0.65 : 1 },
+      ]}
     >
       <View style={[s.row, { flexWrap: 'wrap' }]}>
         {React.Children.map(children, (child) =>
@@ -170,6 +136,7 @@ export function CategoryIcon({
   category: Pick<Category, 'color' | 'icon'>;
   size?: number;
 }) {
+  const { palette, s, money, hidden } = useAppearance();
   const color = categoryColor(category.color);
   return (
     <View
@@ -190,33 +157,60 @@ export function CategoryIcon({
     </View>
   );
 }
-export function Field({ label, ...props }: TextInputProps & { label: string }) {
+export function Field({
+  label,
+  error,
+  helper,
+  inputRef,
+  ...props
+}: TextInputProps & {
+  label: string;
+  error?: string;
+  helper?: string;
+  inputRef?: React.Ref<TextInput>;
+}) {
+  const { palette, s, money, hidden } = useAppearance();
   return (
     <View>
       <Text style={s.label}>{label}</Text>
       <TextInput
+        ref={inputRef}
         accessibilityLabel={label}
         placeholderTextColor={palette.muted}
         {...props}
-        style={[s.input, props.style]}
+        style={[s.input, error ? { borderColor: palette.expense } : null, props.style]}
       />
+      {!!error && (
+        <Text accessibilityRole="alert" style={[s.muted, { color: palette.expense, marginTop: 6 }]}>
+          {error}
+        </Text>
+      )}
+      {!!helper && !error && <Text style={[s.muted, { marginTop: 6 }]}>{helper}</Text>}
     </View>
   );
 }
 export function MonthSelector({
   month,
   onShift,
+  onCurrent,
 }: {
   month: string;
   onShift: (delta: number) => void;
+  onCurrent: () => void;
 }) {
+  const { palette, s, money, hidden } = useAppearance();
   return (
-    <View style={[s.row, { justifyContent: 'space-between' }]}>
-      <IconButton icon="chevron-back" label="Mês anterior" onPress={() => onShift(-1)} />
-      <Text style={[s.heading, { flex: 1, textAlign: 'center' }]}>
-        {monthName(month).replace(/^./, (first) => first.toLocaleUpperCase('pt-BR'))}
-      </Text>
-      <IconButton icon="chevron-forward" label="Próximo mês" onPress={() => onShift(1)} />
+    <View>
+      <View style={[s.row, { justifyContent: 'space-between' }]}>
+        <IconButton icon="chevron-back" label="Mês anterior" onPress={() => onShift(-1)} />
+        <Text style={[s.heading, { flex: 1, textAlign: 'center' }]}>
+          {monthName(month).replace(/^./, (first) => first.toLocaleUpperCase('pt-BR'))}
+        </Text>
+        <IconButton icon="chevron-forward" label="Próximo mês" onPress={() => onShift(1)} />
+      </View>
+      {month !== today().slice(0, 7) && (
+        <Button secondary title="Voltar ao mês atual" onPress={onCurrent} />
+      )}
     </View>
   );
 }
@@ -227,6 +221,7 @@ export function Empty({
   title?: string;
   text?: string;
 }) {
+  const { palette, s, money, hidden } = useAppearance();
   return (
     <View style={[s.card, { alignItems: 'center', paddingVertical: 30 }]}>
       <Ionicons name="wallet-outline" color={palette.teal} size={40} />

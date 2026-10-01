@@ -57,6 +57,8 @@ As releases existentes não são sobrescritas. Para corrigir uma versão publica
 
 Também é possível iniciar o workflow manualmente em Actions. Nesse caso, ele publica a versão definida no código escolhido; se já existir, recusa a operação.
 
+Para compilar sem publicar, desmarque `publish` no início manual do workflow. O APK assinado e `update.json` ficam no artefato `meu-saldo-candidate` por sete dias. Esse fluxo permite validar a interface antes de criar a tag pública.
+
 ## Publicação local alternativa
 
 Compile com a assinatura original e prepare os arquivos (ajuste o caminho do SDK):
@@ -64,12 +66,12 @@ Compile com a assinatura original e prepare os arquivos (ajuste o caminho do SDK
 ```powershell
 npm ci
 npx expo prebuild --platform android --no-install
-.\android\gradlew.bat -p android assembleRelease '-PreactNativeArchitectures=armeabi-v7a,arm64-v8a'
-python scripts/prepare_release.py --apk android/app/build/outputs/apk/release/app-release.apk --aapt CAMINHO_DO_SDK/build-tools/36.0.0/aapt.exe --apksigner CAMINHO_DO_SDK/build-tools/36.0.0/apksigner.bat --tag v1.3.1
-gh release create v1.3.1 .dist/release/meu-saldo.apk .dist/release/update.json --repo e-Lopes/meu-saldo --target main --title "Meu Saldo 1.3.1" --notes-file release/notes.md --latest
+.\android\gradlew.bat -p android assembleRelease '-PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86_64'
+python scripts/prepare_release.py --apk android/app/build/outputs/apk/release/app-release.apk --aapt CAMINHO_DO_SDK/build-tools/36.0.0/aapt.exe --apksigner CAMINHO_DO_SDK/build-tools/36.0.0/apksigner.bat --tag v1.4.0
+gh release create v1.4.0 .dist/release/meu-saldo.apk .dist/release/update.json --repo e-Lopes/meu-saldo --target main --title "Meu Saldo 1.4.0" --notes-file release/notes.md --latest
 ```
 
-O script requer Python 3.11 ou superior e usa apenas a biblioteca padrão. A versão, tamanho, hash e URL são gerados a partir do APK compilado e de `app.json`; não edite `update.json` à mão. O APK contém as arquiteturas ARM de celulares reais; o development build local pode incluir x86 para emuladores. APKs maiores que 100 MB são recusados para preservar compatibilidade com o atualizador da versão 1.2.
+O script requer Python 3.11 ou superior e usa apenas a biblioteca padrão. A versão, tamanho, hash e URL são gerados a partir do APK compilado e de `app.json`; não edite `update.json` à mão. O APK contém ARM de celulares reais e x86_64 para validação em emulador. APKs maiores que 100 MB são recusados para preservar compatibilidade com o atualizador da versão 1.2.
 
 ## Interface do update.json
 

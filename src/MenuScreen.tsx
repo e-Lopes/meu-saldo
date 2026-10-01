@@ -1,9 +1,10 @@
+import { useAppearance, Colors } from './Appearance';
 import React, { ReactNode, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ledger } from './finance';
-import { Button, palette, s } from './ui';
+import { Button, Chip } from './ui';
 
 type Props = {
   ledger: Ledger | null;
@@ -29,6 +30,8 @@ export function MenuScreen({
   onExport,
   onImport,
 }: Props) {
+  const { palette, s, theme, setTheme, saving, lastBackup } = useAppearance();
+  const styles = menuStyles(palette);
   const [privacy, setPrivacy] = useState(false);
   const [backup, setBackup] = useState(false);
   const [updates, setUpdates] = useState(false);
@@ -41,6 +44,8 @@ export function MenuScreen({
     if (!ledger && !loading) setBackup(true);
   }, [ledger, loading]);
   const showBackup = backup;
+  const backupReminder =
+    !!ledger?.entries.length && (!lastBackup || Date.now() - lastBackup > 14 * 86400000);
   return (
     <>
       <LinearGradient colors={['#17304F', '#215761']} style={styles.privacy}>
@@ -91,6 +96,29 @@ export function MenuScreen({
       </LinearGradient>
       <View style={s.card}>
         <Text style={s.heading}>Do seu jeito</Text>
+        <Text style={s.label}>Aparência</Text>
+        <View style={s.wrap}>
+          {(
+            [
+              { key: 'system', label: 'Sistema' },
+              { key: 'light', label: 'Claro' },
+              { key: 'dark', label: 'Escuro' },
+            ] as const
+          ).map((mode) => (
+            <Chip
+              key={mode.key}
+              selected={theme === mode.key}
+              disabled={saving}
+              onPress={() => void setTheme(mode.key)}
+            >
+              {mode.label}
+            </Chip>
+          ))}
+        </View>
+        <Text style={s.muted}>
+          O tema e a opção de ocultar valores ficam salvos somente neste celular.
+        </Text>
+        <View style={s.divider} />
         <MenuRow
           icon="grid-outline"
           title="Categorias"
@@ -146,12 +174,24 @@ export function MenuScreen({
         <MenuRow
           icon="download-outline"
           title="Cópia de segurança"
-          subtitle="Salve ou recupere seus registros"
+          subtitle={
+            backupReminder
+              ? 'Quando puder, salve uma cópia dos seus registros'
+              : lastBackup
+                ? `Última cópia: ${new Date(lastBackup).toLocaleDateString('pt-BR')}`
+                : 'Salve ou recupere seus registros'
+          }
           expanded={showBackup}
           onPress={() => setBackup((v) => !v)}
         />
         {showBackup && (
           <View style={styles.inset}>
+            <Text style={s.muted}>
+              {lastBackup
+                ? `Última exportação concluída: ${new Date(lastBackup).toLocaleString('pt-BR')}.`
+                : 'Nenhuma exportação concluída neste celular.'}{' '}
+              A data não garante que o arquivo ainda exista.
+            </Text>
             <Text style={s.muted}>
               Guarde uma cópia antes de trocar de celular ou desinstalar o app. O arquivo não é
               criptografado; escolha um lugar seguro.
@@ -205,6 +245,7 @@ export function MenuScreen({
   );
 }
 function Tip({ title, text }: { title: string; text: string }) {
+  const { palette, s, money, hidden } = useAppearance();
   return (
     <View style={{ gap: 4 }}>
       <Text style={[s.text, { fontWeight: '600' }]}>{title}</Text>
@@ -229,6 +270,8 @@ function MenuRow({
   disabled?: boolean;
   highlight?: boolean;
 }) {
+  const { palette, s, money, hidden } = useAppearance();
+  const styles = menuStyles(palette);
   return (
     <Pressable
       accessibilityRole="button"
@@ -237,7 +280,7 @@ function MenuRow({
       disabled={disabled}
       style={({ pressed }) => [styles.menuRow, { opacity: disabled ? 0.4 : pressed ? 0.65 : 1 }]}
     >
-      <View style={[styles.menuIcon, highlight && { backgroundColor: '#D7EDE7' }]}>
+      <View style={[styles.menuIcon, highlight && { backgroundColor: palette.selected }]}>
         <Ionicons name={icon} size={23} color={palette.teal} />
       </View>
       <View style={{ flex: 1, gap: 3 }}>
@@ -255,40 +298,41 @@ function MenuRow({
     </Pressable>
   );
 }
-const styles = StyleSheet.create({
-  privacy: { padding: 22, borderRadius: 22, gap: 16 },
-  shield: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF15',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  privacyTitle: { color: 'white', fontSize: 23, fontWeight: '700', flex: 1 },
-  privacyText: { color: '#DCECEB', fontSize: 14, lineHeight: 22 },
-  badge: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF15',
-  },
-  badgeText: { color: '#C1EBE1', fontSize: 12, fontWeight: '600' },
-  privacyAction: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 },
-  menuRow: {
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'center',
-    minHeight: 66,
-    paddingVertical: 8,
-  },
-  menuIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: '#EAF3F1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inset: { backgroundColor: '#F3F6F8', borderRadius: 16, padding: 16, gap: 14 },
-});
+const menuStyles = (palette: Colors) =>
+  StyleSheet.create({
+    privacy: { padding: 22, borderRadius: 22, gap: 16 },
+    shield: {
+      width: 48,
+      height: 48,
+      borderRadius: 16,
+      backgroundColor: '#FFFFFF15',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    privacyTitle: { color: 'white', fontSize: 23, fontWeight: '700', flex: 1 },
+    privacyText: { color: '#DCECEB', fontSize: 14, lineHeight: 22 },
+    badge: {
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+      backgroundColor: '#FFFFFF15',
+    },
+    badgeText: { color: '#C1EBE1', fontSize: 12, fontWeight: '600' },
+    privacyAction: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 },
+    menuRow: {
+      flexDirection: 'row',
+      gap: 12,
+      alignItems: 'center',
+      minHeight: 66,
+      paddingVertical: 8,
+    },
+    menuIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 14,
+      backgroundColor: palette.selected,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    inset: { backgroundColor: palette.background, borderRadius: 16, padding: 16, gap: 14 },
+  });

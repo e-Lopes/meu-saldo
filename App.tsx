@@ -1,11 +1,23 @@
-import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { AppearanceProvider, useAppearance } from './src/Appearance';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Alert,
+  BackHandler,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { CategoryScreen } from './src/CategoryScreen';
 import { Charts } from './src/Charts';
+import { HistoryScreen } from './src/HistoryScreen';
 import { MenuScreen } from './src/MenuScreen';
 import { EntryForm } from './src/EntryForm';
 import {
@@ -16,24 +28,13 @@ import {
   groups,
   Kind,
   Ledger,
-  money,
   monthEntries,
   shiftMonth,
   today,
   totals,
 } from './src/finance';
 import Native from './src/native';
-import {
-  Button,
-  CategoryIcon,
-  Chip,
-  Empty,
-  Field,
-  IconButton,
-  MonthSelector,
-  palette,
-  s,
-} from './src/ui';
+import { Button, CategoryIcon, Chip, Empty, Field, IconButton, MonthSelector } from './src/ui';
 import { errorMessage, useLedger } from './src/useLedger';
 import { useUpdates } from './src/useUpdates';
 
@@ -41,9 +42,10 @@ type Tab = 'home' | 'history' | 'charts' | 'menu';
 type Updates = ReturnType<typeof useUpdates>;
 
 function UpdateCard({ updates, settings = false }: { updates: Updates; settings?: boolean }) {
+  const { palette, s, money, hidden } = useAppearance();
   if (!settings && (!updates.release || updates.dismissed)) return null;
   return (
-    <View style={[s.card, { backgroundColor: '#E5F0F2' }]}>
+    <View style={[s.card, { backgroundColor: palette.selected }]}>
       <Text style={s.heading}>
         {updates.release ? `Nova versão ${updates.release.versionName}` : 'Atualizações'}
       </Text>
@@ -110,12 +112,13 @@ function Home({
   month: string;
   openHistory: (category: string) => void;
 }) {
+  const { palette, s, money, hidden } = useAppearance();
   const entries = monthEntries(ledger, month);
   const summary = totals(entries);
   const grouped = groups(ledger, month);
   return (
     <>
-      <View style={[s.card, { backgroundColor: palette.navy, padding: 24 }]}>
+      <View style={[s.card, { backgroundColor: palette.hero, padding: 24 }]}>
         <Text style={{ color: '#BFD0E1', fontSize: 15 }}>Saldo do mês</Text>
         <Text style={{ color: 'white', fontSize: 35, fontWeight: '700' }}>
           {money(summary.balance)}
@@ -159,7 +162,11 @@ function Home({
               <CategoryIcon category={g.category} />
               <Text style={s.text}>{g.category.name}</Text>
               <Text style={[s.heading, { fontSize: 19 }]}>{money(g.cents)}</Text>
-              <Text style={s.muted}>{g.percentage.toFixed(1).replace('.', ',')}% dos gastos</Text>
+              <Text style={s.muted}>
+                {hidden
+                  ? 'Valores ocultos'
+                  : `${g.percentage.toFixed(1).replace('.', ',')}% dos gastos`}
+              </Text>
             </Pressable>
           ))}
         </View>
@@ -167,128 +174,17 @@ function Home({
     </>
   );
 }
-function History({
-  ledger,
-  month,
-  selectedCategory,
-  onCategory,
-  onEdit,
-}: {
-  ledger: Ledger;
-  month: string;
-  selectedCategory: string | null;
-  onCategory: (id: string | null) => void;
-  onEdit: (entry: Entry) => void;
-}) {
-  const [search, setSearch] = useState('');
-  const [kind, setKind] = useState<Kind | null>(null);
-  const rows = useMemo(
-    () =>
-      monthEntries(ledger, month)
-        .filter(
-          (e) =>
-            (!kind || e.kind === kind) &&
-            (!selectedCategory || e.categoryId === selectedCategory) &&
-            e.description
-              .toLocaleLowerCase('pt-BR')
-              .includes(search.trim().toLocaleLowerCase('pt-BR')),
-        )
-        .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)),
-    [ledger, month, search, kind, selectedCategory],
-  );
-  const categories = ledger.categories.filter(
-    (c) => !c.archived || monthEntries(ledger, month).some((e) => e.categoryId === c.id),
-  );
-  return (
-    <>
-      <Field
-        label="Buscar lançamentos"
-        value={search}
-        onChangeText={setSearch}
-        placeholder="Buscar pela descrição"
-      />
-      <View style={s.wrap}>
-        <Chip selected={!kind} onPress={() => setKind(null)}>
-          Todos
-        </Chip>
-        <Chip selected={kind === 'RECEITA'} onPress={() => setKind('RECEITA')}>
-          Receitas
-        </Chip>
-        <Chip selected={kind === 'DESPESA'} onPress={() => setKind('DESPESA')}>
-          Despesas
-        </Chip>
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
-      >
-        <Chip selected={!selectedCategory} onPress={() => onCategory(null)}>
-          Todas as categorias
-        </Chip>
-        {categories.map((c) => (
-          <Chip key={c.id} selected={selectedCategory === c.id} onPress={() => onCategory(c.id)}>
-            {c.name}
-            {c.archived ? ' (arquivada)' : ''}
-          </Chip>
-        ))}
-      </ScrollView>
-      <Text style={s.muted}>
-        {rows.length} lançamento{rows.length !== 1 ? 's' : ''} · saldo filtrado{' '}
-        {money(totals(rows).balance)}
-      </Text>
-      {rows.length === 0 ? (
-        <Empty
-          title="Nenhum lançamento encontrado"
-          text="Tente outro filtro ou adicione um lançamento."
-        />
-      ) : (
-        rows.map((e, i) => {
-          const category = ledger.categories.find((c) => c.id === e.categoryId);
-          return (
-            <React.Fragment key={e.id}>
-              {(i === 0 || rows[i - 1].date !== e.date) && (
-                <Text style={s.heading}>{dateLabel(e.date)}</Text>
-              )}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Editar ${e.description || category?.name || 'Receita'}, ${money(e.cents)}`}
-                onPress={() => onEdit(e)}
-                style={[s.card, s.row]}
-              >
-                {category ? (
-                  <CategoryIcon category={category} />
-                ) : (
-                  <Ionicons name="trending-up" size={30} color={palette.income} />
-                )}
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={[s.text, { fontWeight: '600' }]}>
-                    {e.description || category?.name || 'Receita'}
-                  </Text>
-                  <Text style={s.muted}>
-                    {category?.name || 'Receita'}
-                    {category?.archived ? ' · arquivada' : ''}
-                  </Text>
-                  <Text
-                    style={{
-                      color: e.kind === 'RECEITA' ? palette.income : palette.expense,
-                      fontSize: 17,
-                      fontWeight: '600',
-                    }}
-                  >
-                    {e.kind === 'RECEITA' ? '+' : '−'} {money(e.cents)}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" color={palette.muted} size={20} />
-              </Pressable>
-            </React.Fragment>
-          );
-        })
-      )}
-    </>
-  );
-}
 function Main() {
+  const {
+    palette,
+    s,
+    money,
+    dark,
+    hidden,
+    toggleHidden,
+    saving: preferenceBusy,
+    refreshPreferences,
+  } = useAppearance();
   const store = useLedger();
   const updates = useUpdates();
   const insets = useSafeAreaInsets();
@@ -297,8 +193,93 @@ function Main() {
   const [entry, setEntry] = useState<Entry | null | undefined>();
   const [categories, setCategories] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [historyKind, setHistoryKind] = useState<Kind | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
   const [preview, setPreview] = useState<Ledger | null>(null);
+  const navigation = useRef<Tab[]>([]);
+  const [undo, setUndo] = useState<{
+    entry: Entry;
+    index: number;
+    category: Ledger['categories'][number] | undefined;
+    deadline: number;
+  } | null>(null);
+  useEffect(() => {
+    if (!undo) return;
+    const timer = setTimeout(() => setUndo(null), Math.max(0, undo.deadline - Date.now()));
+    return () => clearTimeout(timer);
+  }, [undo]);
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (entry !== undefined || categories || preview) return false;
+      const previous = navigation.current.pop();
+      if (previous) {
+        setTab(previous);
+        return true;
+      }
+      if (tab !== 'home') {
+        setTab('home');
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [tab, entry, categories, preview]);
+  const clearFilters = () => {
+    setSearch('');
+    setHistoryKind(null);
+    setCategoryFilter(null);
+  };
+  const openCategoryHistory = (key: string) => {
+    setCategoryFilter(key);
+    setHistoryKind('DESPESA');
+    setSearch('');
+    chooseTab('history');
+  };
+  async function deleteEntry(key: string) {
+    let removed: Entry | undefined;
+    let position = 0;
+    let originalCategory: Ledger['categories'][number] | undefined;
+    await store.mutate((l) => {
+      position = l.entries.findIndex((e) => e.id === key);
+      removed = l.entries[position];
+      originalCategory = l.categories.find((c) => c.id === removed?.categoryId);
+      return { ...l, entries: l.entries.filter((e) => e.id !== key) };
+    });
+    if (removed) {
+      const timeout = await AccessibilityInfo.getRecommendedTimeoutMillis(15000).catch(() => 15000);
+      setUndo({
+        entry: removed,
+        index: position,
+        category: originalCategory,
+        deadline: Date.now() + timeout,
+      });
+    }
+  }
+  async function undoDelete() {
+    const snapshot = undo;
+    if (!snapshot || store.busy) return;
+    if (snapshot.deadline <= Date.now()) {
+      setUndo(null);
+      return;
+    }
+    try {
+      await store.mutate((l) => {
+        if (l.entries.some((e) => e.id === snapshot.entry.id))
+          throw new Error('Este lançamento já está no histórico.');
+        const entries = [...l.entries];
+        entries.splice(Math.min(snapshot.index, entries.length), 0, snapshot.entry);
+        const categories =
+          snapshot.category && !l.categories.some((c) => c.id === snapshot.category!.id)
+            ? [...l.categories, snapshot.category]
+            : l.categories;
+        return { ...l, entries, categories };
+      });
+      setUndo(null);
+    } catch (e) {
+      Alert.alert('Não foi possível desfazer', errorMessage(e));
+    }
+  }
   const ledger = store.ledger;
   const title = { home: 'Meu Saldo', history: 'Lançamentos', charts: 'Gráficos', menu: 'Menu' }[
     tab
@@ -316,9 +297,17 @@ function Main() {
             setBackupBusy(true);
             try {
               const saved = await Native.exportBackup(encode(ledger), `meu-saldo-${today()}.json`);
-              if (saved) Alert.alert('Backup salvo', 'Seus registros foram exportados.');
+              if (saved) {
+                await refreshPreferences();
+                Alert.alert('Backup salvo', 'Seus registros foram exportados.');
+              }
             } catch (e) {
-              Alert.alert('Backup não salvo', errorMessage(e));
+              Alert.alert(
+                errorMessage(e).includes('A cópia foi salva')
+                  ? 'Cópia salva com aviso'
+                  : 'Backup não salvo',
+                errorMessage(e),
+              );
             } finally {
               setBackupBusy(false);
             }
@@ -343,6 +332,8 @@ function Main() {
     if (!preview || store.busy) return;
     try {
       await store.restore(preview);
+      setUndo(null);
+      clearFilters();
       setPreview(null);
       Alert.alert('Backup restaurado', 'Os registros foram substituídos pelo backup escolhido.');
     } catch (e) {
@@ -350,17 +341,29 @@ function Main() {
     }
   }
   const chooseTab = (next: Tab) => {
-    setTab(next);
-    if (next === 'history') setCategoryFilter(null);
+    if (next !== tab) {
+      navigation.current.push(tab);
+      setTab(next);
+    }
   };
   return (
     <SafeAreaView style={s.page} edges={['top']}>
-      <StatusBar style="dark" />
+      <StatusBar style={dark ? 'light' : 'dark'} />
       <LinearGradient
-        colors={['#D6EFEB', '#F3F6F8']}
+        colors={[palette.header, palette.background]}
         style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 6 }}
       >
-        <Text style={s.title}>{title}</Text>
+        <View style={[s.row, { justifyContent: 'space-between' }]}>
+          <Text accessibilityRole="header" style={[s.title, { flex: 1 }]}>
+            {title}
+          </Text>
+          <IconButton
+            icon={hidden ? 'eye-off-outline' : 'eye-outline'}
+            label={hidden ? 'Mostrar valores' : 'Ocultar valores'}
+            onPress={() => void toggleHidden()}
+            disabled={preferenceBusy}
+          />
+        </View>
         <Text style={s.muted}>
           {tab === 'home'
             ? 'Sua vida financeira, no seu celular.'
@@ -373,6 +376,7 @@ function Main() {
         {tab !== 'menu' && (
           <MonthSelector
             month={month}
+            onCurrent={() => setMonth(today().slice(0, 7))}
             onShift={(delta) => {
               const next = shiftMonth(month, delta);
               if (/^\d{4}-\d{2}$/.test(next)) setMonth(next);
@@ -380,71 +384,80 @@ function Main() {
           />
         )}
       </LinearGradient>
-      <ScrollView key={tab} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-        {store.loading && <ActivityIndicator size="large" color={palette.teal} />}
-        {!!store.error && (
-          <View style={s.card}>
-            <Text style={s.heading}>Registros indisponíveis</Text>
-            <Text style={s.text}>{store.error}</Text>
-            <Text style={s.muted}>
-              Não desinstale o app. Você pode restaurar um backup no Menu.
-            </Text>
-          </View>
-        )}
-        {tab === 'home' && (
-          <>
-            <UpdateCard updates={updates} />
-            {ledger && (
-              <Home
-                ledger={ledger}
-                month={month}
-                openHistory={(key) => {
-                  setCategoryFilter(key);
-                  setTab('history');
-                }}
-              />
-            )}
-          </>
-        )}
-        {tab === 'history' && ledger && (
-          <History
-            ledger={ledger}
-            month={month}
-            selectedCategory={categoryFilter}
-            onCategory={setCategoryFilter}
-            onEdit={setEntry}
+      {tab === 'history' && ledger ? (
+        <HistoryScreen
+          ledger={ledger}
+          month={month}
+          category={categoryFilter}
+          search={search}
+          kind={historyKind}
+          onCategory={setCategoryFilter}
+          onSearch={setSearch}
+          onKind={setHistoryKind}
+          onClear={clearFilters}
+          onEdit={setEntry}
+        />
+      ) : (
+        <ScrollView key={tab} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+          {store.loading && <ActivityIndicator size="large" color={palette.teal} />}
+          {!!store.error && (
+            <View style={s.card}>
+              <Text style={s.heading}>Registros indisponíveis</Text>
+              <Text style={s.text}>{store.error}</Text>
+              <Text style={s.muted}>
+                Não desinstale o app. Você pode restaurar um backup no Menu.
+              </Text>
+            </View>
+          )}
+          {tab === 'home' && (
+            <>
+              <UpdateCard updates={updates} />
+              {ledger && <Home ledger={ledger} month={month} openHistory={openCategoryHistory} />}
+            </>
+          )}
+          {tab === 'charts' && ledger && (
+            <Charts ledger={ledger} month={month} onCategory={openCategoryHistory} />
+          )}
+          {tab === 'menu' && (
+            <MenuScreen
+              ledger={ledger}
+              version={updates.version}
+              busy={store.busy}
+              loading={store.loading}
+              backupBusy={backupBusy}
+              updateVersion={updates.release?.versionName}
+              updateContent={<UpdateCard updates={updates} settings />}
+              onCategories={() => setCategories(true)}
+              onExport={() => void exportBackup()}
+              onImport={() => void importBackup()}
+            />
+          )}
+        </ScrollView>
+      )}
+      {undo && (
+        <View
+          style={{
+            backgroundColor: palette.hero,
+            paddingHorizontal: 20,
+            paddingVertical: 12,
+            gap: 8,
+          }}
+        >
+          <Text accessibilityLiveRegion="polite" style={{ color: 'white', fontSize: 15 }}>
+            Lançamento excluído.
+          </Text>
+          <Button
+            title={store.busy ? 'Aguarde…' : 'Desfazer exclusão'}
+            onPress={() => void undoDelete()}
+            disabled={store.busy}
           />
-        )}
-        {tab === 'charts' && ledger && (
-          <Charts
-            ledger={ledger}
-            month={month}
-            onCategory={(key) => {
-              setCategoryFilter(key);
-              setTab('history');
-            }}
-          />
-        )}
-        {tab === 'menu' && (
-          <MenuScreen
-            ledger={ledger}
-            version={updates.version}
-            busy={store.busy}
-            loading={store.loading}
-            backupBusy={backupBusy}
-            updateVersion={updates.release?.versionName}
-            updateContent={<UpdateCard updates={updates} settings />}
-            onCategories={() => setCategories(true)}
-            onExport={() => void exportBackup()}
-            onImport={() => void importBackup()}
-          />
-        )}
-      </ScrollView>
+        </View>
+      )}
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          backgroundColor: 'white',
+          backgroundColor: palette.card,
           borderTopWidth: 1,
           borderColor: palette.border,
           paddingTop: 8,
@@ -470,7 +483,7 @@ function Main() {
                   opacity: ledger && !store.busy ? 1 : 0.4,
                 }}
               >
-                <Ionicons name="add" color="white" size={32} />
+                <Ionicons name="add" color={dark ? '#102D2A' : 'white'} size={32} />
               </Pressable>
             </View>
           ) : (
@@ -496,6 +509,7 @@ function Main() {
               <Text
                 style={{
                   fontSize: 11,
+                  fontWeight: tab === key ? '700' : '400',
                   color: tab === key ? palette.teal : palette.muted,
                   textAlign: 'center',
                 }}
@@ -510,6 +524,7 @@ function Main() {
         <EntryForm
           entry={entry}
           ledger={ledger}
+          month={month}
           onClose={() => setEntry(undefined)}
           onSave={(value) =>
             store.mutate((l) => ({
@@ -519,9 +534,7 @@ function Main() {
                 : [...l.entries, value],
             }))
           }
-          onDelete={(key) =>
-            store.mutate((l) => ({ ...l, entries: l.entries.filter((e) => e.id !== key) }))
-          }
+          onDelete={deleteEntry}
         />
       )}
       {categories && ledger && (
@@ -572,7 +585,9 @@ function Main() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <Main />
+      <AppearanceProvider>
+        <Main />
+      </AppearanceProvider>
     </SafeAreaProvider>
   );
 }
