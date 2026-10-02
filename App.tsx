@@ -9,6 +9,7 @@ import {
   Pressable,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -116,24 +117,26 @@ function Home({
   const entries = monthEntries(ledger, month);
   const summary = totals(entries);
   const grouped = groups(ledger, month);
+  const { width, fontScale } = useWindowDimensions();
+  const stacked = width < 360 || fontScale > 1.2;
   return (
     <>
       <View style={[s.card, { backgroundColor: palette.hero, padding: 24 }]}>
-        <Text style={{ color: '#BFD0E1', fontSize: 15 }}>Saldo do mês</Text>
-        <Text style={{ color: 'white', fontSize: 35, fontWeight: '700' }}>
+        <Text style={{ color: palette.heroMuted, fontSize: 15 }}>Saldo do mês</Text>
+        <Text style={{ color: palette.heroText, fontSize: stacked ? 28 : 35, fontWeight: '700' }}>
           {money(summary.balance)}
         </Text>
-        <Text style={{ color: '#BFD0E1', fontSize: 13 }}>
+        <Text style={{ color: palette.heroMuted, fontSize: 13 }}>
           Receitas menos despesas, sem saldo anterior
         </Text>
         <View style={[s.wrap, { marginTop: 12 }]}>
-          <View style={{ flexGrow: 1, minWidth: '40%', gap: 5 }}>
+          <View style={{ flexGrow: 1, minWidth: stacked ? '100%' : '40%', gap: 5 }}>
             <Text style={{ color: '#8AD3C2', fontSize: 14 }}>↗ Receitas</Text>
             <Text style={{ color: 'white', fontSize: 20, fontWeight: '600' }}>
               {money(summary.income)}
             </Text>
           </View>
-          <View style={{ flexGrow: 1, minWidth: '40%', gap: 5 }}>
+          <View style={{ flexGrow: 1, minWidth: stacked ? '100%' : '40%', gap: 5 }}>
             <Text style={{ color: '#F0AC9A', fontSize: 14 }}>↘ Despesas</Text>
             <Text style={{ color: 'white', fontSize: 20, fontWeight: '600' }}>
               {money(summary.expense)}
@@ -141,7 +144,9 @@ function Home({
           </View>
         </View>
       </View>
-      <Text style={s.heading}>Despesas por categoria</Text>
+      <Text accessibilityRole="header" style={s.heading}>
+        Despesas por categoria
+      </Text>
       {entries.length === 0 ? (
         <Empty />
       ) : grouped.length === 0 ? (
@@ -159,7 +164,12 @@ function Home({
               onPress={() => openHistory(g.category.id)}
               style={({ pressed }) => [
                 s.card,
-                { width: '47%', flexGrow: 1, minWidth: 135, opacity: pressed ? 0.65 : 1 },
+                {
+                  width: stacked ? '100%' : '47%',
+                  flexGrow: 1,
+                  minWidth: 135,
+                  opacity: pressed ? 0.65 : 1,
+                },
               ]}
             >
               <CategoryIcon category={g.category} />
@@ -476,15 +486,15 @@ function Main() {
                 accessibilityLabel="Adicionar lançamento"
                 disabled={!ledger || store.busy}
                 onPress={() => setEntry(null)}
-                style={{
+                style={({ pressed }) => ({
                   backgroundColor: palette.teal,
                   borderRadius: 22,
                   width: 55,
                   height: 55,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  opacity: ledger && !store.busy ? 1 : 0.4,
-                }}
+                  opacity: ledger && !store.busy ? (pressed ? 0.65 : 1) : 0.4,
+                })}
               >
                 <Ionicons name="add" color={dark ? '#102D2A' : 'white'} size={32} />
               </Pressable>
@@ -495,7 +505,14 @@ function Main() {
               accessibilityRole="tab"
               accessibilityState={{ selected: tab === key }}
               onPress={() => chooseTab(key)}
-              style={{ flex: 1, alignItems: 'center', minHeight: 48, paddingVertical: 4, gap: 4 }}
+              style={({ pressed }) => ({
+                flex: 1,
+                alignItems: 'center',
+                minHeight: 48,
+                paddingVertical: 4,
+                gap: 4,
+                opacity: pressed ? 0.65 : 1,
+              })}
             >
               <Ionicons
                 name={
@@ -558,7 +575,7 @@ function Main() {
         <View
           style={{ flex: 1, backgroundColor: '#17304F99', justifyContent: 'center', padding: 24 }}
         >
-          <View style={s.card}>
+          <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={s.card}>
             <Text style={s.heading}>Restaurar este backup?</Text>
             <Text style={s.text}>
               {preview?.entries.length ?? 0} lançamentos e {preview?.categories.length ?? 0}{' '}
@@ -579,7 +596,7 @@ function Main() {
               disabled={store.busy}
               onPress={() => setPreview(null)}
             />
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     </SafeAreaView>

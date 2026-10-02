@@ -132,7 +132,7 @@ function CategoryChart({
             accessibilityRole="button"
             accessibilityState={{ expanded: details }}
             onPress={() => setDetails((v) => !v)}
-            style={styles.disclosure}
+            style={({ pressed }) => [styles.disclosure, { opacity: pressed ? 0.65 : 1 }]}
           >
             <Text style={[s.text, { flex: 1, fontWeight: '600' }]}>Concentração dos gastos</Text>
             <Ionicons
@@ -299,7 +299,11 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
                 accessibilityRole="button"
                 accessibilityState={{ selected: selected === m.key }}
                 accessibilityLabel={`${monthName(m.key)}. Receitas ${money(m.income)}, despesas ${money(m.expense)}, saldo ${money(m.balance)}.`}
-                style={[styles.month, selected === m.key && styles.selectedMonth]}
+                style={({ pressed }) => [
+                  styles.month,
+                  selected === m.key && styles.selectedMonth,
+                  { opacity: pressed ? 0.65 : 1 },
+                ]}
               >
                 <Text
                   style={[

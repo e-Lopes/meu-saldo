@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, SectionList, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { dateLabel, Entry, Kind, Ledger, monthEntries, totals } from './finance';
+import { dateLabel, Entry, Kind, Ledger, monthEntries, searchText, totals } from './finance';
 import { useAppearance } from './Appearance';
 import { Button, CategoryIcon, Chip, Empty, Field } from './ui';
 
@@ -31,6 +31,10 @@ export function HistoryScreen({
   const { palette, s, money } = useAppearance();
   const [expanded, setExpanded] = useState(false);
   const monthly = useMemo(() => monthEntries(ledger, month), [ledger, month]);
+  const categoryById = useMemo(
+    () => new Map(ledger.categories.map((c) => [c.id, c])),
+    [ledger.categories],
+  );
   const rows = useMemo(
     () =>
       monthly
@@ -38,12 +42,12 @@ export function HistoryScreen({
           (e) =>
             (!kind || e.kind === kind) &&
             (!category || e.categoryId === category) &&
-            e.description
-              .toLocaleLowerCase('pt-BR')
-              .includes(search.trim().toLocaleLowerCase('pt-BR')),
+            searchText(
+              `${e.description} ${categoryById.get(e.categoryId ?? '')?.name ?? (e.kind === 'RECEITA' ? 'Receita' : '')}`,
+            ).includes(searchText(search)),
         )
         .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)),
-    [monthly, kind, category, search],
+    [monthly, kind, category, search, categoryById],
   );
   const sections = useMemo(() => {
     const byDate = new Map<string, Entry[]>();
@@ -58,6 +62,7 @@ export function HistoryScreen({
     (c) => !c.archived || monthly.some((e) => e.categoryId === c.id),
   );
   const filterCount = Number(!!kind) + Number(!!category) + Number(!!search.trim());
+  const summary = useMemo(() => totals(rows), [rows]);
   return (
     <View style={{ flex: 1 }}>
       <View
@@ -74,8 +79,12 @@ export function HistoryScreen({
           {filterCount ? ' encontrados' : ' no mês'}
         </Text>
         <Text style={[s.text, { fontWeight: '600' }]}>
-          Saldo {filterCount ? 'filtrado' : 'do mês'}: {money(totals(rows).balance)}
+          Saldo {filterCount ? 'filtrado' : 'do mês'}: {money(summary.balance)}
         </Text>
+        <View style={s.wrap}>
+          <Text style={s.muted}>Receitas: {money(summary.income)}</Text>
+          <Text style={s.muted}>Despesas: {money(summary.expense)}</Text>
+        </View>
       </View>
       <SectionList
         sections={sections}
@@ -93,12 +102,13 @@ export function HistoryScreen({
               label="Buscar lançamentos"
               value={search}
               onChangeText={onSearch}
-              placeholder="Buscar pela descrição"
+              placeholder="Descrição ou categoria"
               returnKeyType="search"
             />
             <View style={{ gap: 8 }}>
               <Button
                 secondary
+                expanded={expanded}
                 title={`${expanded ? 'Recolher filtros' : 'Filtrar lançamentos'}${filterCount ? ` (${filterCount})` : ''}`}
                 onPress={() => setExpanded((v) => !v)}
               />
@@ -168,7 +178,7 @@ export function HistoryScreen({
           </View>
         )}
         renderItem={({ item: e }) => {
-          const category = ledger.categories.find((c) => c.id === e.categoryId);
+          const category = categoryById.get(e.categoryId ?? '');
           return (
             <Pressable
               accessibilityRole="button"

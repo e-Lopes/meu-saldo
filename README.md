@@ -28,7 +28,7 @@ O módulo Android local é responsável pela gravação atômica do JSON, seleto
 - npm 10, com `package-lock.json` versionado;
 - JDK 21;
 - Android SDK Platform 36 e Build Tools 36.0.0;
-- aparelho Android 8 ou superior, ou emulador, para desenvolvimento.
+- aparelho físico com Android 8 ou superior para desenvolvimento e validação manual.
 
 Na raiz deste repositório:
 

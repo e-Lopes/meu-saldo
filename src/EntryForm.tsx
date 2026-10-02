@@ -212,6 +212,12 @@ export function EntryForm({
                 Este lançamento será registrado em {monthName(date.slice(0, 7))}. Toque na data para
                 mudar.
               </Text>
+              {date.slice(0, 7) !== month && (
+                <Text accessibilityLiveRegion="polite" style={[s.muted, { marginTop: 8 }]}>
+                  A data está fora do mês visualizado ({monthName(month)}). Após salvar, consulte
+                  {` ${monthName(date.slice(0, 7))}`} para encontrar este lançamento.
+                </Text>
+              )}
             </View>
             {calendar && (
               <DateTimePicker

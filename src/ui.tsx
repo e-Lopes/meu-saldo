@@ -11,18 +11,20 @@ export function Button({
   disabled = false,
   secondary = false,
   danger = false,
+  expanded,
 }: {
   title: string;
   onPress: () => void;
   disabled?: boolean;
   secondary?: boolean;
   danger?: boolean;
+  expanded?: boolean;
 }) {
   const { palette, s } = useAppearance();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, ...(expanded === undefined ? {} : { expanded }) }}
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [

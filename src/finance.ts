@@ -58,6 +58,12 @@ export const dateLabel = (value: string) =>
   civilDate(value).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' });
 export const money = (cents: number) =>
   (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+export const searchText = (value: string) =>
+  value
+    .trim()
+    .toLocaleLowerCase('pt-BR')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 export const categoryColor = (color: number) =>
   `#${(color >>> 0).toString(16).padStart(8, '0').slice(2)}`;
 export function parseCents(value: string) {

@@ -71,7 +71,7 @@ python scripts/prepare_release.py --apk android/app/build/outputs/apk/release/ap
 gh release create v1.4.0 .dist/release/meu-saldo.apk .dist/release/update.json --repo e-Lopes/meu-saldo --target main --title "Meu Saldo 1.4.0" --notes-file release/notes.md --latest
 ```
 
-O script requer Python 3.11 ou superior e usa apenas a biblioteca padrão. A versão, tamanho, hash e URL são gerados a partir do APK compilado e de `app.json`; não edite `update.json` à mão. O APK contém ARM de celulares reais e x86_64 para validação em emulador. APKs maiores que 100 MB são recusados para preservar compatibilidade com o atualizador da versão 1.2.
+O script requer Python 3.11 ou superior e usa apenas a biblioteca padrão. A versão, tamanho, hash e URL são gerados a partir do APK compilado e de `app.json`; não edite `update.json` à mão. O APK contém as arquiteturas armeabi-v7a, arm64-v8a e x86_64. A validação manual deve ocorrer em aparelho físico. APKs maiores que 100 MB são recusados para preservar compatibilidade com o atualizador da versão 1.2.
 
 ## Interface do update.json
 
