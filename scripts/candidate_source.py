@@ -7,7 +7,8 @@ import subprocess
 
 def candidate_commit(run, repository):
     if (run.get('status') != 'completed' or run.get('conclusion') != 'success'
-            or run.get('event') != 'workflow_dispatch'
+            or run.get('event') not in {'workflow_dispatch', 'push'}
+            or (run.get('event') == 'push' and run.get('head_branch') != 'main')
             or run.get('path') != '.github/workflows/release.yml'
             or run.get('head_repository', {}).get('full_name') != repository
             or not re.fullmatch(r'[a-f0-9]{40}', run.get('head_sha', ''))):

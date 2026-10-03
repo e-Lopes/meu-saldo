@@ -12,6 +12,7 @@ import unittest
 from unittest.mock import patch
 
 import candidate_source
+import check_release
 import prepare_release
 import publish_candidate
 
@@ -98,10 +99,33 @@ class ReleaseToolsTests(unittest.TestCase):
                'path': '.github/workflows/release.yml', 'head_repository': {'full_name': 'e-Lopes/meu-saldo'},
                'head_sha': 'c' * 40}
         self.assertEqual(candidate_source.candidate_commit(run, 'e-Lopes/meu-saldo'), 'c' * 40)
+        self.assertEqual(candidate_source.candidate_commit({**run, 'event': 'push', 'head_branch': 'main'}, 'e-Lopes/meu-saldo'), 'c' * 40)
         for change in ({'conclusion': 'failure'}, {'event': 'pull_request'}, {'path': 'other.yml'},
-                       {'head_repository': {'full_name': 'someone/other'}}, {'head_sha': 'invalid'}):
+                       {'head_repository': {'full_name': 'someone/other'}}, {'head_sha': 'invalid'},
+                       {'event': 'push', 'head_branch': 'other'}):
             with self.assertRaises(ValueError):
                 candidate_source.candidate_commit({**run, **change}, 'e-Lopes/meu-saldo')
+
+    def test_automatic_release_skips_complete_versions_and_rejects_partial_releases(self):
+        self.assertTrue(check_release.release_required('1.0.0', []))
+        published = {'tag_name': 'v1.0.0', 'draft': False, 'prerelease': False,
+                     'assets': [{'name': 'meu-saldo.apk'}, {'name': 'update.json'}]}
+        self.assertFalse(check_release.release_required('1.0.0', [published]))
+        self.assertTrue(check_release.release_required('1.0.1', [published]))
+        for change in ({'draft': True}, {'prerelease': True}, {'assets': []}):
+            with self.assertRaises(ValueError):
+                check_release.release_required('1.0.0', [{**published, **change}])
+
+    def test_automatic_release_api_failure_does_not_request_a_build(self):
+        output = self.root / 'github-output'
+        summary = self.root / 'summary'
+        env = {'GITHUB_REPOSITORY': 'e-Lopes/meu-saldo', 'GITHUB_OUTPUT': str(output),
+               'GITHUB_STEP_SUMMARY': str(summary)}
+        with patch.dict(os.environ, env), patch.object(check_release, 'ROOT', self.root), \
+                patch.object(check_release.subprocess, 'check_output', side_effect=subprocess.CalledProcessError(1, 'gh')):
+            with self.assertRaises(subprocess.CalledProcessError):
+                check_release.main()
+        self.assertFalse(output.exists())
 
     def test_publisher_reuses_exact_files_and_commit(self):
         self.prepare()

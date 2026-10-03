@@ -149,7 +149,7 @@ APK: `android/app/build/outputs/apk/release/app-release.apk`. O plugin recusa um
 
 Guarde uma cópia segura de `.tools/meu-saldo-release.jks` e `keystore.properties` fora do Git. Não crie outra chave para atualizar instalações existentes.
 
-O fluxo padrão é **Gerar candidato Android → conferir o APK no celular → Publicar candidato Android**, informando o ID da execução conferida. A publicação reutiliza o mesmo APK, manifesto e notas, sem recompilar. Não há publicação automática por tag. Prepare as versões com `npm run release:prepare -- X.Y.Z` e descreva as mudanças em `release/notes.md`.
+O fluxo padrão é **preparar versão → completar notas → commit e push na main**. O GitHub Actions gera e publica automaticamente novas versões, reutilizando o mesmo APK, manifesto e notas sem recompilar. Versões já publicadas são puladas. A geração sem publicação e a promoção manual continuam disponíveis para conferir o APK antes de distribuir. Não há disparo por tag. Consulte o [guia de releases](releases.md).
 
 Consulte [Releases e atualizações](releases.md) e [Migração para Expo](expo-migration.md). O código Kotlin/Compose anterior permanece no histórico do Git; a cópia local de trabalho antiga foi removida.
 

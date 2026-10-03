@@ -6,6 +6,7 @@
 - Correções no atualizador para preservar a informação mais recente e evitar solicitações simultâneas de instalação.
 - README voltado aos usuários, com instalação, primeiros passos, privacidade e cópias de segurança; detalhes técnicos reunidos na documentação.
 - Remoção do código antigo Kotlin/Compose e de dependências, imports e estilos sem uso.
+- Geração e publicação de novas versões automatizadas no GitHub, com APK assinado e arquivo de atualização.
 
 Mantidos os temas claro, escuro e do sistema, a ocultação de valores, o uso offline e o formato dos dados locais.
 

@@ -17,7 +17,7 @@ Se `versionCode` for maior e a versão for compatível com o Android instalado, 
 
 Na primeira instalação feita pelo próprio Meu Saldo, o usuário pode precisar autorizar **Instalar apps desconhecidos** para o Meu Saldo. Depois, confirma a instalação no Android. Caso cancele, o app continua funcionando e permite tentar novamente. A instalação silenciosa não é garantida.
 
-Versões 1.0 e 1.1 não possuem atualizador: precisam instalar a 1.2 ou superior manualmente uma vez, sobre a instalação existente.
+As versões históricas 1.0 e 1.1, anteriores à migração, não possuem atualizador: precisam instalar uma versão atual manualmente uma vez, sobre a instalação existente. A nova 1.0.0, com `versionCode` 8, mantém o atualizador e sucede a 1.5.0.
 
 ## Por que os dados são mantidos
 
@@ -46,7 +46,7 @@ Em 03/10/2026, a próxima entrega recebeu a versão pública `1.0.0`, sucedendo 
 Na raiz do projeto:
 
 ```powershell
-npm run release:prepare -- 1.5.0
+npm run release:prepare -- 1.0.1
 ```
 
 O comando exige X.Y.Z maior que a versão atual, alinha `app.json`, `package.json` e as duas versões do `package-lock.json`, e incrementa `android.versionCode` uma vez. Não cria commit, tag nem publicação. As notas anteriores são preservadas em `release/history/<versão>.md`; `release/notes.md` recebe um modelo para a nova versão.
@@ -54,14 +54,29 @@ O comando exige X.Y.Z maior que a versão atual, alinha `app.json`, `package.jso
 Edite `release/notes.md` com as mudanças reais. O marcador `RELEASE_NOTES_PENDING` bloqueia a geração dos assets até ser removido. Para simular sem alterar arquivos:
 
 ```powershell
-npm run release:prepare -- 1.5.0 --dry-run
+npm run release:prepare -- 1.0.1 --dry-run
 ```
 
 Execute `npm run validate`, faça commit dos arquivos e envie o código. A versão do exemplo deve ser ajustada para uma versão ainda não publicada.
 
-## Gerar candidato → conferir no celular → publicar
+## Publicação automática
 
-1. Em **Actions → Gerar candidato Android → Run workflow**, escolha o commit/branch preparado. Esse workflow somente compila: não publica uma release e não é disparado por tags.
+O envio à `main` de alterações em `app.json`, `release/notes.md`, no workflow de geração ou em `scripts/check_release.py` dispara a automação. A consulta inicial pula versões já publicadas com APK e manifesto completos; drafts, pré-releases incompletas e falhas de consulta não são tratados como versões disponíveis para sobrescrita.
+
+Para cada entrega:
+
+1. Prepare uma versão ainda não publicada com `npm run release:prepare -- X.Y.Z`.
+2. Complete `release/notes.md`, registrando validações realizadas e pendentes.
+3. Faça commit das mudanças e push para `main`.
+4. Acompanhe o workflow **Gerar candidato Android**. Ele verifica tipos, formatação e scripts, compila em Linux com a assinatura original, arquiva o candidato, verifica novamente o APK e publica os mesmos bytes.
+
+O script cria a tag no commit compilado e marca a release como `latest`. Isso permite que o atualizador do celular encontre também a numeração reiniciada 1.0.0. Não há recompilação na publicação nem substituição de releases existentes. O `versionCode` precisa superar todas as releases públicas. Um push sem nova versão não atualiza o APK publicado.
+
+Também é possível executar **Run workflow** e marcar **Publicar automaticamente depois de compilar e verificar**. Desmarcada, a opção gera somente o candidato. A automação publica após as verificações técnicas; ela não declara que houve teste no celular. O fluxo manual abaixo continua disponível para conferir antes de distribuir.
+
+## Alternativa manual: gerar candidato → conferir no celular → publicar
+
+1. Em **Actions → Gerar candidato Android → Run workflow**, escolha o commit/branch preparado e deixe a opção de publicação automática desmarcada. Nesse modo o workflow somente compila. Não há disparo por tags.
 2. Depois de concluir, baixe o artefato **meu-saldo-candidate**. Ele contém `meu-saldo.apk`, `update.json` e `release-notes.md`, com retenção de 30 dias. Anote o ID da execução mostrado no resumo e na URL de Actions (`.../actions/runs/ID`).
 3. Instale esse APK sobre uma versão release anterior, sem desinstalar. Confira registros, cadastre um lançamento, exporte um backup e restaure-o. Use dados fictícios na conferência; valide também tema, ocultação, fontes ampliadas e modo avião.
 4. Abra **Actions → Publicar candidato Android → Run workflow**, informe o ID da execução escolhida e marque a confirmação de publicação. Sem essa confirmação, o job de publicação não é executado. A confirmação autoriza publicar o candidato; ela não declara que houve teste em aparelho físico. Registre nas notas as verificações realizadas e as que ainda estiverem pendentes.

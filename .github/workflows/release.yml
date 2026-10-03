@@ -1,7 +1,19 @@
 name: Gerar candidato Android
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - app.json
+      - release/notes.md
+      - .github/workflows/release.yml
+      - scripts/check_release.py
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publicar automaticamente depois de compilar e verificar
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -11,7 +23,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      needed: ${{ steps.version.outputs.needed }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Conferir se a versão ainda precisa ser publicada
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLISH: ${{ github.event_name == 'push' || inputs.publish }}
+        run: |
+          if [ "$PUBLISH" = "true" ]; then
+            python scripts/check_release.py
+          else
+            echo 'needed=true' >> "$GITHUB_OUTPUT"
+          fi
   release:
+    needs: check-version
+    if: needs.check-version.outputs.needed == 'true'
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -62,9 +96,31 @@ jobs:
           if-no-files-found: error
           include-hidden-files: true
       - name: Identificar o candidato
+        env:
+          AUTO_PUBLISH: ${{ github.event_name == 'push' || inputs.publish }}
         run: |
           echo "Candidato: execução $GITHUB_RUN_ID, commit $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
-          echo 'Baixe meu-saldo-candidate, confira o APK no celular e publique escolhendo este ID no workflow Publicar candidato Android.' >> "$GITHUB_STEP_SUMMARY"
+          if [ "$AUTO_PUBLISH" = "true" ]; then
+            echo 'Publicação automática após as verificações técnicas. A conferência em aparelho físico permanece separada.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Baixe meu-saldo-candidate, confira o APK no celular e publique escolhendo este ID no workflow Publicar candidato Android.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Conferir novamente o APK antes da publicação automática
+        if: github.event_name == 'push' || inputs.publish
+        run: |
+          python scripts/prepare_release.py --verify-only \
+            --apk .dist/release/meu-saldo.apk --output .dist/release \
+            --aapt "$ANDROID_HOME/build-tools/36.0.0/aapt" \
+            --apksigner "$ANDROID_HOME/build-tools/36.0.0/apksigner"
+      - name: Publicar automaticamente o mesmo APK e marcar como latest
+        if: github.event_name == 'push' || inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CANDIDATE_DIR: .dist/release
+          CANDIDATE_SHA: ${{ github.sha }}
+          CANDIDATE_RUN_ID: ${{ github.run_id }}
+        run: python scripts/publish_candidate.py
       - name: Remover credenciais do runner
         if: always()
         run: rm -f -- .tools/github-release.jks keystore.properties

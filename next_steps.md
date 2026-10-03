@@ -53,6 +53,6 @@ Corrigir os problemas encontrados antes de ampliar funcionalidades. Não há su�
 
 ## Distribuição e próximas versões
 
-Fluxo recomendado: **preparar versão → gerar candidato → conferir no celular → publicar o mesmo candidato**. Os comandos, workflows e verificações estão em [docs/releases.md](docs/releases.md). A confirmação de publicação autoriza distribuir; não declara que houve teste em aparelho físico. Registrar sempre as validações realizadas e pendentes nas notas.
+Fluxo automático: **preparar versão → completar notas → commit e push na main → gerar e publicar o mesmo APK**. A publicação ocorre após as verificações técnicas, com assinatura original, manifesto de atualização e marcação `latest`; versões já publicadas não são sobrescritas. A geração sem publicação e a promoção manual continuam disponíveis para conferir antes de distribuir. Os comandos, workflows e verificações estão em [docs/releases.md](docs/releases.md). Registrar sempre as validações realizadas e pendentes nas notas; publicação automática não declara teste em aparelho físico.
 
 Manter a compilação no GitHub Actions em Linux e `android/` gerada pelo Expo, com personalizações no plugin e módulo local. Preservar pacote e chave de assinatura para permitir atualização sobre instalações existentes. Login, sincronização, API financeira, migração de banco ou EAS Update não são próximos passos necessários para o uso pessoal e familiar atual.
