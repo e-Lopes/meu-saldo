@@ -67,10 +67,13 @@ O development build usa assinatura debug e não substitui o APK de produção. P
 | `npm run android` | Gera, compila e instala o app Android de desenvolvimento. |
 | `npm run prebuild` | Gera o projeto Android a partir da configuração Expo. |
 | `npm run typecheck` | Verifica TypeScript. |
+| `npm run validate` | Verifica tipos e formatação. |
+| `npm run release:prepare -- X.Y.Z` | Alinha versões, incrementa versionCode e prepara notas. |
+| `python scripts/test_release_tools.py` | Confere os scripts de release sem rede ou compilação Android. |
 | `npm run format` | Formata o código TypeScript e as configurações do Expo. |
 | `npm start -- --clear` | Inicia o Metro limpando o cache. |
 
-Não há suíte de testes no projeto migrado. A validação das telas e do uso no aparelho continua manual, conforme solicitado. Não há destinos web ou iOS configurados.
+Não há suíte de testes da aplicação. Há verificações isoladas dos scripts de release, usando arquivos temporários. A validação das telas e do uso no aparelho continua manual, conforme solicitado. Não há destinos web ou iOS configurados.
 
 ## Estrutura
 
@@ -79,6 +82,12 @@ App.tsx                            navegação e composição das telas
 index.ts                           entrada Expo
 src/
   Appearance.tsx                   temas e preferências locais
+  theme/                           paletas e tokens de design
+  HomeScreen.tsx                   saldo e métricas do mês
+  UpdateCard.tsx                   apresentação de atualizações
+  BottomNavigation.tsx             abas e botão adicionar
+  LedgerRow.tsx                    linha adaptável do Histórico
+  useBackup.ts                     exportação, prévia e restauração
   ui.tsx                           componentes reutilizáveis
   HistoryScreen.tsx                histórico virtualizado e filtros
   EntryForm.tsx                    formulário e calendário
@@ -133,6 +142,8 @@ npx expo prebuild --platform android --no-install
 APK: `android/app/build/outputs/apk/release/app-release.apk`. O plugin recusa um build release sem a configuração da assinatura.
 
 Guarde uma cópia segura de `.tools/meu-saldo-release.jks` e `keystore.properties` fora do Git. Não crie outra chave para atualizar instalações existentes.
+
+O fluxo padrão é **Gerar candidato Android → conferir o APK no celular → Publicar candidato Android**, informando o ID da execução conferida. A publicação reutiliza o mesmo APK, manifesto e notas, sem recompilar. Não há publicação automática por tag. Prepare as versões com `npm run release:prepare -- X.Y.Z` e descreva as mudanças em `release/notes.md`.
 
 Consulte [Releases e atualizações](docs/releases.md) e [Migração para Expo](docs/expo-migration.md). O código Kotlin/Compose anterior permanece no histórico do Git.
 

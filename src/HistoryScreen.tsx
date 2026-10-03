@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, SectionList, Text, View } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { ScrollView, SectionList, Text, View } from 'react-native';
+import { LedgerRow } from './LedgerRow';
 import { dateLabel, Entry, Kind, Ledger, monthEntries, searchText, totals } from './finance';
 import { useAppearance } from './Appearance';
-import { Button, CategoryIcon, Chip, Empty, Field } from './ui';
+import { Button, Chip, Empty, Field, SegmentedControl } from './ui';
 
 export function HistoryScreen({
   ledger,
@@ -81,10 +81,6 @@ export function HistoryScreen({
         <Text style={[s.text, { fontWeight: '600' }]}>
           Saldo {filterCount ? 'filtrado' : 'do mês'}: {money(summary.balance)}
         </Text>
-        <View style={s.wrap}>
-          <Text style={s.muted}>Receitas: {money(summary.income)}</Text>
-          <Text style={s.muted}>Despesas: {money(summary.expense)}</Text>
-        </View>
       </View>
       <SectionList
         sections={sections}
@@ -98,6 +94,10 @@ export function HistoryScreen({
         windowSize={7}
         ListHeaderComponent={
           <View style={{ gap: 12, paddingVertical: 16 }}>
+            <View style={s.wrap}>
+              <Text style={s.muted}>Receitas: {money(summary.income)}</Text>
+              <Text style={s.muted}>Despesas: {money(summary.expense)}</Text>
+            </View>
             <Field
               label="Buscar lançamentos"
               value={search}
@@ -109,26 +109,23 @@ export function HistoryScreen({
               <Button
                 secondary
                 expanded={expanded}
-                title={`${expanded ? 'Recolher filtros' : 'Filtrar lançamentos'}${filterCount ? ` (${filterCount})` : ''}`}
+                title={`${expanded ? 'Fechar filtros' : 'Filtros'}${filterCount ? ` (${filterCount})` : ''}`}
                 onPress={() => setExpanded((v) => !v)}
               />
-              {!!filterCount && (
-                <Button secondary title="Limpar filtros e busca" onPress={onClear} />
-              )}
+              {!!filterCount && <Button secondary title="Limpar filtros" onPress={onClear} />}
             </View>
             {expanded && (
               <>
-                <View style={s.wrap}>
-                  <Chip selected={!kind} onPress={() => onKind(null)}>
-                    Todos
-                  </Chip>
-                  <Chip selected={kind === 'RECEITA'} onPress={() => onKind('RECEITA')}>
-                    Receitas
-                  </Chip>
-                  <Chip selected={kind === 'DESPESA'} onPress={() => onKind('DESPESA')}>
-                    Despesas
-                  </Chip>
-                </View>
+                <SegmentedControl
+                  label="Tipo de lançamento"
+                  value={kind ?? 'all'}
+                  onChange={(value) => onKind(value === 'all' ? null : value)}
+                  options={[
+                    { value: 'all', label: 'Todos' },
+                    { value: 'RECEITA', label: 'Receitas' },
+                    { value: 'DESPESA', label: 'Despesas' },
+                  ]}
+                />
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -177,48 +174,13 @@ export function HistoryScreen({
             </Text>
           </View>
         )}
-        renderItem={({ item: e }) => {
-          const category = categoryById.get(e.categoryId ?? '');
-          return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Editar ${e.description || category?.name || 'Receita'}, ${e.kind === 'RECEITA' ? 'receita' : 'despesa'}, ${money(e.cents)}`}
-              onPress={() => onEdit(e)}
-              style={({ pressed }) => [
-                s.card,
-                s.row,
-                { marginBottom: 10, opacity: pressed ? 0.7 : 1 },
-              ]}
-            >
-              {category ? (
-                <CategoryIcon category={category} />
-              ) : (
-                <Ionicons name="trending-up" size={30} color={palette.income} />
-              )}
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text style={[s.text, { fontWeight: '600' }]}>
-                  {e.description || category?.name || 'Receita'}
-                </Text>
-                <Text style={s.muted}>
-                  {category?.name || 'Receita'}
-                  {category?.archived ? ' · arquivada' : ''}
-                </Text>
-                <Text
-                  style={[
-                    s.text,
-                    {
-                      color: e.kind === 'RECEITA' ? palette.income : palette.expense,
-                      fontWeight: '600',
-                    },
-                  ]}
-                >
-                  {e.kind === 'RECEITA' ? '+' : '−'} {money(e.cents)}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" color={palette.muted} size={20} />
-            </Pressable>
-          );
-        }}
+        renderItem={({ item }) => (
+          <LedgerRow
+            entry={item}
+            category={categoryById.get(item.categoryId ?? '')}
+            onEdit={onEdit}
+          />
+        )}
       />
     </View>
   );

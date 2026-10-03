@@ -39,42 +39,67 @@ O script envia quatro secrets criptografados: `MEUSALDO_KEYSTORE_BASE64`, `MEUSA
 
 `release/signing-certificate.sha256` contém somente a impressão digital pública do certificado original. O preparador de releases compara esse valor com o APK e recusa uma assinatura diferente.
 
-## Publicar uma versão
+## Preparar uma versão
 
-1. Atualize `expo.version` e aumente `expo.android.versionCode` em `app.json`. Mantenha `package.json` com a mesma versão. Use versões como `1.4.0`, sem sufixos. Atualize `release/notes.md` com as mudanças reais dessa versão.
-2. Faça a validação manual que considerar necessária e envie o código para `main`.
-3. Crie e envie uma tag exatamente igual à versão, com prefixo `v`:
+Na raiz do projeto:
 
 ```powershell
-git tag v1.4.0
-git push origin main
-git push origin v1.4.0
+npm run release:prepare -- 1.5.0
 ```
 
-4. Acompanhe **Actions → Publicar APK Android**. O workflow instala com `npm ci`, checa TypeScript, gera o Android pelo Expo prebuild, compila com a chave original, verifica assinatura e versão e publica os dois assets. Não executa suíte de testes. Não depende de EAS.
+O comando exige X.Y.Z maior que a versão atual, alinha `app.json`, `package.json` e as duas versões do `package-lock.json`, e incrementa `android.versionCode` uma vez. Não cria commit, tag nem publicação. As notas anteriores são preservadas em `release/history/<versão>.md`; `release/notes.md` recebe um modelo para a nova versão.
 
-As releases existentes não são sobrescritas. Para corrigir uma versão publicada, aumente o versionCode, use uma nova versão/tag e publique novamente. Uma falha de compilação não publica uma release incompleta. Os arquivos são anexados antes de tornar a release pública. Evite publicar releases sem assets ou marcar manualmente versões antigas como latest, pois o app consulta latest.
+Edite `release/notes.md` com as mudanças reais. O marcador `RELEASE_NOTES_PENDING` bloqueia a geração dos assets até ser removido. Para simular sem alterar arquivos:
 
-Também é possível iniciar o workflow manualmente em Actions. Nesse caso, ele publica a versão definida no código escolhido; se já existir, recusa a operação.
+```powershell
+npm run release:prepare -- 1.5.0 --dry-run
+```
 
-Para compilar sem publicar, desmarque `publish` no início manual do workflow. O APK assinado e `update.json` ficam no artefato `meu-saldo-candidate` por sete dias. Esse fluxo permite validar a interface antes de criar a tag pública.
+Execute `npm run validate`, faça commit dos arquivos e envie o código. A versão do exemplo deve ser ajustada para uma versão ainda não publicada.
 
-## Publicação local alternativa
+## Gerar candidato → conferir no celular → publicar
 
-Compile com a assinatura original e prepare os arquivos (ajuste o caminho do SDK):
+1. Em **Actions → Gerar candidato Android → Run workflow**, escolha o commit/branch preparado. Esse workflow somente compila: não publica uma release e não é disparado por tags.
+2. Depois de concluir, baixe o artefato **meu-saldo-candidate**. Ele contém `meu-saldo.apk`, `update.json` e `release-notes.md`, com retenção de 30 dias. Anote o ID da execução mostrado no resumo e na URL de Actions (`.../actions/runs/ID`).
+3. Instale esse APK sobre uma versão release anterior, sem desinstalar. Confira registros, cadastre um lançamento, exporte um backup e restaure-o. Use dados fictícios na conferência; valide também tema, ocultação, fontes ampliadas e modo avião.
+4. Abra **Actions → Publicar candidato Android → Run workflow**, informe o ID da execução escolhida e marque a confirmação de publicação. Sem essa confirmação, o job de publicação não é executado. A confirmação autoriza publicar o candidato; ela não declara que houve teste em aparelho físico. Registre nas notas as verificações realizadas e as que ainda estiverem pendentes.
+5. O workflow obtém o artefato da execução informada e faz checkout do commit que o produziu. Verifica novamente assinatura, identificador, versão, tamanho, SHA-256 e correspondência das notas. Não executa npm, prebuild ou Gradle e não regrava os arquivos do candidato.
+6. Publica exatamente `meu-saldo.apk` e `update.json` do candidato, usando as notas arquivadas nele. A tag `vX.Y.Z` é criada no commit da compilação; uma tag já existente só é aceita se apontar para esse mesmo commit. A release nasce como draft, recebe os assets e então se torna pública e latest.
+
+Não é preciso criar ou enviar a tag manualmente. Candidatos de outro repositório, de outro workflow, de execução que não terminou com sucesso ou com artefato expirado são recusados. Alterações feitas depois do candidato não entram nessa publicação.
+
+Releases existentes, inclusive drafts, nunca são sobrescritas. Um candidato com `versionCode` menor ou igual ao de uma release pública também é recusado. Se uma falha deixar um draft, confira-o no GitHub antes de decidir removê-lo ou finalizá-lo; uma nova tentativa não substituirá seus arquivos automaticamente. Se o candidato expirou ou precisa de correção, gere e confira outro candidato.
+
+As versões antigas 1.0/1.1, anteriores ao atualizador, podem não ter `update.json`; o verificador trata essas tags históricas separadamente.
+
+## Verificações de desenvolvimento
+
+```powershell
+npm run validate
+python scripts/test_release_tools.py
+```
+
+`validate` verifica TypeScript e formatação. Os testes pequenos dos scripts de release usam arquivos temporários e ferramentas simuladas: verificam alinhamento de versões, recusas, assinatura, integridade do candidato e publicação sem alterar bytes. Não instalam o aplicativo, não acessam a rede nem substituem a conferência em aparelho físico.
+
+O GitHub Actions gera Android em Linux usando a configuração Expo, o plugin e o módulo local. `android/` continua gerada e ignorada pelo Git. Não há EAS obrigatório.
+
+## Compilação local alternativa
+
+Para diagnóstico ou conferência local, compile com a assinatura original:
 
 ```powershell
 npm ci
 npx expo prebuild --platform android --no-install
 .\android\gradlew.bat -p android assembleRelease '-PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86_64'
-python scripts/prepare_release.py --apk android/app/build/outputs/apk/release/app-release.apk --aapt CAMINHO_DO_SDK/build-tools/36.0.0/aapt.exe --apksigner CAMINHO_DO_SDK/build-tools/36.0.0/apksigner.bat --tag v1.4.0
-gh release create v1.4.0 .dist/release/meu-saldo.apk .dist/release/update.json --repo e-Lopes/meu-saldo --target main --title "Meu Saldo 1.4.0" --notes-file release/notes.md --latest
+python scripts/prepare_release.py --apk android/app/build/outputs/apk/release/app-release.apk --aapt CAMINHO_DO_SDK/build-tools/36.0.0/aapt.exe --apksigner CAMINHO_DO_SDK/build-tools/36.0.0/apksigner.bat
 ```
 
-O script requer Python 3.11 ou superior e usa apenas a biblioteca padrão. A versão, tamanho, hash e URL são gerados a partir do APK compilado e de `app.json`; não edite `update.json` à mão. O APK contém as arquiteturas armeabi-v7a, arm64-v8a e x86_64. A validação manual deve ocorrer em aparelho físico. APKs maiores que 100 MB são recusados para preservar compatibilidade com o atualizador da versão 1.2.
+Para distribuir pelo procedimento padrão, use um candidato gerado no Actions. O script requer Python 3.11 ou superior e usa a biblioteca padrão. APKs acima de 100 MB são recusados para preservar compatibilidade com o atualizador da versão 1.2. O APK continua incluindo armeabi-v7a, arm64-v8a e x86_64.
 
 ## Interface do update.json
 
 Os campos são `versionCode` (inteiro crescente), `versionName` (X.Y.Z), `minSdk`, `apkUrl` (asset da tag correspondente), `sha256` (hexadecimal), `sizeBytes` e `notes`. O app aceita apenas HTTPS e downloads do repositório configurado. As URLs de redirecionamento são limitadas ao GitHub e seus servidores de assets. O APK tem limite de 100 MB e as informações de versão, 64 KB.
 
 Fontes: [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository), [secrets do Actions](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets), [autorização de instalação no Android](https://developer.android.com/reference/android/content/pm/PackageManager#canRequestPackageInstalls()).
+
+Referências do fluxo de promoção: [download de artefatos de outra execução](https://github.com/actions/download-artifact#download-artifacts-from-other-workflow-runs-or-repositories), [criação de releases pelo GitHub CLI](https://cli.github.com/manual/gh_release_create).

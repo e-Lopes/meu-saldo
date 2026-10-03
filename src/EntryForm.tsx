@@ -12,7 +12,9 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CategoryIcon, Chip, Field, IconButton, Button } from './ui';
+import { CategoryIcon, Chip, Field, IconButton, Button, Card, SegmentedControl } from './ui';
+import { MenuRow } from './MenuRow';
+import { spacing } from './theme/tokens';
 import {
   Category,
   civilDate,
@@ -24,6 +26,7 @@ import {
   parseCents,
   initialEntryDate,
   monthName,
+  searchText,
 } from './finance';
 import { errorMessage } from './useLedger';
 
@@ -60,6 +63,13 @@ export function EntryForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const categories = ledger.categories.filter((c) => !c.archived || c.id === entry?.categoryId);
+  const [categoryPicker, setCategoryPicker] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [descriptionOpen, setDescriptionOpen] = useState(!!entry?.description);
+  const selectedCategory = categories.find((category) => category.id === categoryId);
+  const visibleCategories = categories.filter((category) =>
+    searchText(category.name).includes(searchText(categorySearch)),
+  );
   const changed =
     kind !== (entry?.kind ?? 'DESPESA') ||
     amount !== (entry ? (entry.cents / 100).toFixed(2).replace('.', ',') : '') ||
@@ -90,8 +100,12 @@ export function EntryForm({
     }
     if (kind === 'DESPESA' && !categoryId) {
       setCategoryError('Escolha uma categoria para a despesa.');
+      setCategoryPicker(true);
+      setCategorySearch('');
       Keyboard.dismiss();
-      scrollRef.current?.scrollTo({ y: categoryPosition.current, animated: true });
+      requestAnimationFrame(() =>
+        scrollRef.current?.scrollTo({ y: categoryPosition.current, animated: true }),
+      );
       return;
     }
     try {
@@ -133,12 +147,22 @@ export function EntryForm({
     ]);
   }
   return (
-    <Modal visible animationType="slide" onRequestClose={close}>
+    <Modal
+      visible
+      animationType="slide"
+      onRequestClose={() => {
+        if (saving) return;
+        if (categoryPicker) {
+          setCategoryPicker(false);
+          setCategorySearch('');
+        } else close();
+      }}
+    >
       <SafeAreaView style={s.page} edges={['top', 'bottom']}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior="height">
-          <View style={[s.row, { padding: 12 }]}>
-            <IconButton icon="close" label="Fechar lançamento" onPress={close} />
-            <Text style={[s.title, { flex: 1 }]}>
+          <View style={[s.row, { padding: spacing.md }]}>
+            <IconButton icon="close" label="Fechar lançamento" onPress={close} disabled={saving} />
+            <Text accessibilityRole="header" style={[s.title, { flex: 1 }]}>
               {entry ? 'Editar lançamento' : 'Novo lançamento'}
             </Text>
           </View>
@@ -148,74 +172,136 @@ export function EntryForm({
             keyboardDismissMode="on-drag"
             contentContainerStyle={s.content}
           >
-            <View style={s.wrap}>
-              <Chip
-                disabled={saving}
-                selected={kind === 'DESPESA'}
-                onPress={() => {
-                  setKind('DESPESA');
-                  setCategoryError('');
-                }}
-              >
-                Despesa
-              </Chip>
-              <Chip
-                disabled={saving}
-                selected={kind === 'RECEITA'}
-                onPress={() => {
-                  setKind('RECEITA');
-                  setCategoryError('');
-                }}
-              >
-                Receita
-              </Chip>
-            </View>
-            <Field
-              label="Valor (R$)"
-              inputRef={amountRef}
-              error={amountError}
-              helper="Use vírgula para os centavos, por exemplo: 25,90."
-              placeholder="0,00"
-              value={amount}
-              onChangeText={(value) => {
-                setAmount(value);
-                setAmountError('');
+            <SegmentedControl
+              label="Tipo de lançamento"
+              value={kind}
+              disabled={saving}
+              onChange={(value) => {
+                setKind(value);
+                setCategoryError('');
               }}
-              keyboardType="decimal-pad"
-              maxLength={16}
-              autoFocus={!entry}
-              style={{ fontSize: 32, fontWeight: '600' }}
-              editable={!saving}
+              options={[
+                { value: 'DESPESA', label: 'Despesa' },
+                { value: 'RECEITA', label: 'Receita' },
+              ]}
             />
-            <View style={s.wrap}>
-              <Button
-                secondary
-                title="Limpar valor"
-                disabled={saving || !amount}
+            <View style={[s.row, { alignItems: 'flex-end' }]}>
+              <View style={{ flex: 1 }}>
+                <Field
+                  label="Valor (R$)"
+                  inputRef={amountRef}
+                  error={amountError}
+                  placeholder="0,00"
+                  value={amount}
+                  onChangeText={(value) => {
+                    setAmount(value);
+                    setAmountError('');
+                  }}
+                  keyboardType="decimal-pad"
+                  maxLength={16}
+                  autoFocus={!entry}
+                  selectTextOnFocus
+                  style={{ fontSize: 32, fontWeight: '600' }}
+                  editable={!saving}
+                />
+              </View>
+              {!!amount && (
+                <IconButton
+                  icon="backspace-outline"
+                  label="Limpar valor"
+                  disabled={saving}
+                  onPress={() => {
+                    setAmount('');
+                    setAmountError('');
+                    amountRef.current?.focus();
+                  }}
+                />
+              )}
+            </View>
+            {kind === 'DESPESA' && (
+              <View
+                style={{ gap: spacing.sm }}
+                onLayout={(event) => {
+                  categoryPosition.current = event.nativeEvent.layout.y;
+                }}
+              >
+                <MenuRow
+                  icon="grid-outline"
+                  title="Categoria"
+                  subtitle={
+                    selectedCategory
+                      ? `${selectedCategory.name}${selectedCategory.archived ? ' (arquivada)' : ''}`
+                      : 'Escolher categoria'
+                  }
+                  disabled={saving}
+                  expanded={categoryPicker}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setCategoryPicker((value) => !value);
+                  }}
+                />
+                {!!categoryError && (
+                  <Text accessibilityRole="alert" style={{ color: palette.expense }}>
+                    {categoryError}
+                  </Text>
+                )}
+                {categoryPicker && (
+                  <Card>
+                    {categories.length > 6 && (
+                      <Field
+                        label="Buscar categoria"
+                        value={categorySearch}
+                        onChangeText={setCategorySearch}
+                        placeholder="Nome da categoria"
+                        editable={!saving}
+                      />
+                    )}
+                    <View style={s.wrap}>
+                      {visibleCategories.map((category: Category) => (
+                        <Chip
+                          key={category.id}
+                          disabled={saving}
+                          selected={categoryId === category.id}
+                          onPress={() => {
+                            setCategoryId(category.id);
+                            setCategoryError('');
+                            setCategoryPicker(false);
+                            setCategorySearch('');
+                            Keyboard.dismiss();
+                          }}
+                        >
+                          <CategoryIcon category={category} size={26} /> {category.name}
+                          {category.archived ? ' (arquivada)' : ''}
+                        </Chip>
+                      ))}
+                    </View>
+                    {categories.length === 0 ? (
+                      <Text style={s.muted}>
+                        Crie uma categoria no Menu para registrar despesas.
+                      </Text>
+                    ) : (
+                      visibleCategories.length === 0 && (
+                        <Text style={s.muted}>Nenhuma categoria encontrada. Tente outro nome.</Text>
+                      )
+                    )}
+                  </Card>
+                )}
+              </View>
+            )}
+            <View>
+              <MenuRow
+                icon="calendar-outline"
+                title="Data"
+                subtitle={`${dateLabel(date)} de ${date.slice(0, 4)}`}
+                disabled={saving}
                 onPress={() => {
-                  setAmount('');
-                  setAmountError('');
-                  amountRef.current?.focus();
+                  Keyboard.dismiss();
+                  setCalendar(true);
                 }}
               />
-              <Button secondary title="Fechar teclado" onPress={Keyboard.dismiss} />
-            </View>
-            <View>
-              <Text style={s.label}>Data</Text>
-              <Button
-                secondary
-                title={`${dateLabel(date)} de ${date.slice(0, 4)}`}
-                onPress={() => setCalendar(true)}
-                disabled={saving}
-              />
-              <Text style={[s.muted, { marginTop: 8 }]}>
-                Este lançamento será registrado em {monthName(date.slice(0, 7))}. Toque na data para
-                mudar.
-              </Text>
               {date.slice(0, 7) !== month && (
-                <Text accessibilityLiveRegion="polite" style={[s.muted, { marginTop: 8 }]}>
-                  A data está fora do mês visualizado ({monthName(month)}). Após salvar, consulte
-                  {` ${monthName(date.slice(0, 7))}`} para encontrar este lançamento.
+                <Text accessibilityLiveRegion="polite" style={s.muted}>
+                  Este lançamento ficará em {monthName(date.slice(0, 7))}, fora do mês visualizado.
                 </Text>
               )}
             </View>
@@ -232,50 +318,30 @@ export function EntryForm({
                 }}
               />
             )}
-            {kind === 'DESPESA' && (
-              <View
-                style={{ gap: 10 }}
-                onLayout={(e) => {
-                  categoryPosition.current = e.nativeEvent.layout.y;
+            <View>
+              <MenuRow
+                icon="create-outline"
+                title="Descrição"
+                subtitle={descriptionOpen ? undefined : description || 'Opcional'}
+                disabled={saving}
+                expanded={descriptionOpen}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setDescriptionOpen((value) => !value);
                 }}
-              >
-                <Text style={s.label}>Categoria</Text>
-                {!!categoryError && (
-                  <Text accessibilityRole="alert" style={{ color: palette.expense }}>
-                    {categoryError}
-                  </Text>
-                )}
-                <View style={s.wrap}>
-                  {categories.map((c: Category) => (
-                    <View key={c.id} style={{ minWidth: '45%', flexGrow: 1 }}>
-                      <Chip
-                        disabled={saving}
-                        selected={categoryId === c.id}
-                        onPress={() => {
-                          setCategoryId(c.id);
-                          setCategoryError('');
-                        }}
-                      >
-                        <CategoryIcon category={c} size={26} /> {c.name}
-                        {c.archived ? ' (arquivada)' : ''}
-                      </Chip>
-                    </View>
-                  ))}
-                </View>
-                {categories.length === 0 && (
-                  <Text style={s.muted}>Crie uma categoria no Menu para registrar despesas.</Text>
-                )}
-              </View>
-            )}
-            <Field
-              label="Descrição (opcional)"
-              value={description}
-              onChangeText={setDescription}
-              placeholder="O que foi esse lançamento?"
-              maxLength={300}
-              multiline
-              editable={!saving}
-            />
+              />
+              {descriptionOpen && (
+                <Field
+                  label="Descrição (opcional)"
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Ex.: compras da semana"
+                  maxLength={300}
+                  multiline
+                  editable={!saving}
+                />
+              )}
+            </View>
             {!!error && (
               <Text accessibilityRole="alert" style={{ color: palette.expense }}>
                 {error}
@@ -284,20 +350,17 @@ export function EntryForm({
             {!!entry && (
               <Button danger title="Excluir lançamento" onPress={remove} disabled={saving} />
             )}
-            <Text style={s.muted}>
-              O valor entra no saldo do mês escolhido. Todos os registros ficam neste celular.
-            </Text>
           </ScrollView>
           <View
             style={{
-              padding: 16,
+              padding: spacing.lg,
               borderTopWidth: 1,
               borderColor: palette.border,
               backgroundColor: palette.card,
             }}
           >
             <Button
-              title={saving ? 'Salvando…' : 'Salvar lançamento'}
+              title={saving ? 'Salvando…' : 'Salvar'}
               onPress={() => void save()}
               disabled={saving}
             />

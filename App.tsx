@@ -9,189 +9,28 @@ import {
   Pressable,
   ScrollView,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
-import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { HomeScreen } from './src/HomeScreen';
+import { UpdateCard } from './src/UpdateCard';
+import { useBackup } from './src/useBackup';
+import { BottomNavigation, Tab } from './src/BottomNavigation';
 import { CategoryScreen } from './src/CategoryScreen';
 import { Charts } from './src/Charts';
 import { HistoryScreen } from './src/HistoryScreen';
 import { MenuScreen } from './src/MenuScreen';
 import { EntryForm } from './src/EntryForm';
-import {
-  dateLabel,
-  decode,
-  encode,
-  Entry,
-  groups,
-  Kind,
-  Ledger,
-  monthEntries,
-  shiftMonth,
-  today,
-  totals,
-} from './src/finance';
-import Native from './src/native';
-import { Button, CategoryIcon, Chip, Empty, Field, IconButton, MonthSelector } from './src/ui';
+import { Entry, Kind, Ledger, shiftMonth, today } from './src/finance';
+import { Button, IconButton, MonthSelector } from './src/ui';
 import { errorMessage, useLedger } from './src/useLedger';
 import { useUpdates } from './src/useUpdates';
 
-type Tab = 'home' | 'history' | 'charts' | 'menu';
-type Updates = ReturnType<typeof useUpdates>;
-
-function UpdateCard({ updates, settings = false }: { updates: Updates; settings?: boolean }) {
-  const { palette, s, money, hidden } = useAppearance();
-  if (!settings && (!updates.release || updates.dismissed)) return null;
-  return (
-    <View style={[s.card, { backgroundColor: palette.selected }]}>
-      <Text style={s.heading}>
-        {updates.release ? `Nova versão ${updates.release.versionName}` : 'Atualizações'}
-      </Text>
-      <Text style={s.muted}>Versão instalada: {updates.version}</Text>
-      {updates.release && (
-        <>
-          <Text style={s.text}>A atualização mantém seus registros neste celular.</Text>
-          {!!updates.release.notes && <Text style={s.muted}>{updates.release.notes}</Text>}
-        </>
-      )}
-      {updates.checking && <ActivityIndicator color={palette.teal} />}
-      {updates.downloading ? (
-        <>
-          <View
-            style={{ height: 8, backgroundColor: '#CBDDDF', borderRadius: 4, overflow: 'hidden' }}
-          >
-            <View
-              style={{
-                height: 8,
-                width: `${Math.round(updates.progress * 100)}%`,
-                backgroundColor: palette.teal,
-              }}
-            />
-          </View>
-          <Text style={s.muted}>Baixando {Math.round(updates.progress * 100)}%</Text>
-          <Button secondary title="Cancelar download" onPress={updates.cancel} />
-        </>
-      ) : (
-        <>
-          {updates.release && (
-            <Button
-              title={updates.ready ? 'Instalar atualização' : 'Baixar e atualizar'}
-              onPress={() => void updates.update()}
-              disabled={updates.checking}
-            />
-          )}
-          {settings ? (
-            <Button
-              secondary
-              title={updates.checking ? 'Verificando…' : 'Verificar atualizações'}
-              onPress={() => void updates.check(true)}
-              disabled={updates.checking}
-            />
-          ) : (
-            <Button secondary title="Agora não" onPress={updates.dismiss} />
-          )}
-        </>
-      )}
-      {!!updates.message && <Text style={s.muted}>{updates.message}</Text>}
-      {settings && (
-        <Text style={s.muted}>
-          Verificação ao abrir, no máximo a cada 6 horas. O uso financeiro funciona sem conexão.
-        </Text>
-      )}
-    </View>
-  );
-}
-function Home({
-  ledger,
-  month,
-  openHistory,
-}: {
-  ledger: Ledger;
-  month: string;
-  openHistory: (category: string) => void;
-}) {
-  const { palette, s, money, hidden } = useAppearance();
-  const entries = monthEntries(ledger, month);
-  const summary = totals(entries);
-  const grouped = groups(ledger, month);
-  const { width, fontScale } = useWindowDimensions();
-  const stacked = width < 360 || fontScale > 1.2;
-  return (
-    <>
-      <View style={[s.card, { backgroundColor: palette.hero, padding: 24 }]}>
-        <Text style={{ color: palette.heroMuted, fontSize: 15 }}>Saldo do mês</Text>
-        <Text style={{ color: palette.heroText, fontSize: stacked ? 28 : 35, fontWeight: '700' }}>
-          {money(summary.balance)}
-        </Text>
-        <Text style={{ color: palette.heroMuted, fontSize: 13 }}>
-          Receitas menos despesas, sem saldo anterior
-        </Text>
-        <View style={[s.wrap, { marginTop: 12 }]}>
-          <View style={{ flexGrow: 1, minWidth: stacked ? '100%' : '40%', gap: 5 }}>
-            <Text style={{ color: '#8AD3C2', fontSize: 14 }}>↗ Receitas</Text>
-            <Text style={{ color: 'white', fontSize: 20, fontWeight: '600' }}>
-              {money(summary.income)}
-            </Text>
-          </View>
-          <View style={{ flexGrow: 1, minWidth: stacked ? '100%' : '40%', gap: 5 }}>
-            <Text style={{ color: '#F0AC9A', fontSize: 14 }}>↘ Despesas</Text>
-            <Text style={{ color: 'white', fontSize: 20, fontWeight: '600' }}>
-              {money(summary.expense)}
-            </Text>
-          </View>
-        </View>
-      </View>
-      <Text accessibilityRole="header" style={s.heading}>
-        Despesas por categoria
-      </Text>
-      {entries.length === 0 ? (
-        <Empty />
-      ) : grouped.length === 0 ? (
-        <Empty
-          title="Nenhuma despesa neste mês"
-          text="Suas receitas já estão incluídas no saldo."
-        />
-      ) : (
-        <View style={s.wrap}>
-          {grouped.map((g) => (
-            <Pressable
-              key={g.category.id}
-              accessibilityRole="button"
-              accessibilityLabel={`${g.category.name}: ${money(g.cents)}. Ver lançamentos.`}
-              onPress={() => openHistory(g.category.id)}
-              style={({ pressed }) => [
-                s.card,
-                {
-                  width: stacked ? '100%' : '47%',
-                  flexGrow: 1,
-                  minWidth: 135,
-                  opacity: pressed ? 0.65 : 1,
-                },
-              ]}
-            >
-              <CategoryIcon category={g.category} />
-              <Text style={s.text}>{g.category.name}</Text>
-              <Text style={[s.heading, { fontSize: 19 }]}>{money(g.cents)}</Text>
-              <Text style={s.muted}>
-                {hidden
-                  ? 'Valores ocultos'
-                  : `${g.percentage.toFixed(1).replace('.', ',')}% dos gastos`}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
-    </>
-  );
-}
 function Main() {
   const {
     palette,
     s,
-    money,
     dark,
     hidden,
     toggleHidden,
@@ -200,7 +39,6 @@ function Main() {
   } = useAppearance();
   const store = useLedger();
   const updates = useUpdates();
-  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('home');
   const [month, setMonth] = useState(today().slice(0, 7));
   const [entry, setEntry] = useState<Entry | null | undefined>();
@@ -208,8 +46,6 @@ function Main() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [historyKind, setHistoryKind] = useState<Kind | null>(null);
-  const [backupBusy, setBackupBusy] = useState(false);
-  const [preview, setPreview] = useState<Ledger | null>(null);
   const navigation = useRef<Tab[]>([]);
   const [undo, setUndo] = useState<{
     entry: Entry;
@@ -217,6 +53,17 @@ function Main() {
     category: Ledger['categories'][number] | undefined;
     deadline: number;
   } | null>(null);
+  const {
+    busy: backupBusy,
+    preview,
+    cancelPreview,
+    exportBackup,
+    importBackup,
+    restoreBackup,
+  } = useBackup(store, refreshPreferences, () => {
+    setUndo(null);
+    clearFilters();
+  });
   useEffect(() => {
     if (!undo) return;
     const timer = setTimeout(() => setUndo(null), Math.max(0, undo.deadline - Date.now()));
@@ -294,65 +141,7 @@ function Main() {
     }
   }
   const ledger = store.ledger;
-  const title = { home: 'Meu Saldo', history: 'Lançamentos', charts: 'Gráficos', menu: 'Menu' }[
-    tab
-  ];
-  async function exportBackup() {
-    if (!ledger || backupBusy || store.busy) return;
-    Alert.alert(
-      'Exportar backup',
-      'O arquivo JSON não é criptografado. Guarde em um lugar seguro; quem tiver acesso poderá ler seus registros.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Escolher destino',
-          onPress: async () => {
-            setBackupBusy(true);
-            try {
-              const saved = await Native.exportBackup(encode(ledger), `meu-saldo-${today()}.json`);
-              if (saved) {
-                await refreshPreferences();
-                Alert.alert('Backup salvo', 'Seus registros foram exportados.');
-              }
-            } catch (e) {
-              Alert.alert(
-                errorMessage(e).includes('A cópia foi salva')
-                  ? 'Cópia salva com aviso'
-                  : 'Backup não salvo',
-                errorMessage(e),
-              );
-            } finally {
-              setBackupBusy(false);
-            }
-          },
-        },
-      ],
-    );
-  }
-  async function importBackup() {
-    if (backupBusy || store.busy) return;
-    setBackupBusy(true);
-    try {
-      const text = await Native.importBackup();
-      if (text !== null) setPreview(decode(text));
-    } catch (e) {
-      Alert.alert('Backup inválido', `${errorMessage(e)} Seus registros atuais foram preservados.`);
-    } finally {
-      setBackupBusy(false);
-    }
-  }
-  async function restoreBackup() {
-    if (!preview || store.busy) return;
-    try {
-      await store.restore(preview);
-      setUndo(null);
-      clearFilters();
-      setPreview(null);
-      Alert.alert('Backup restaurado', 'Os registros foram substituídos pelo backup escolhido.');
-    } catch (e) {
-      Alert.alert('Restauração não salva', errorMessage(e));
-    }
-  }
+  const title = { home: 'Meu Saldo', history: 'Histórico', charts: 'Gráficos', menu: 'Menu' }[tab];
   const chooseTab = (next: Tab) => {
     if (next !== tab) {
       navigation.current.push(tab);
@@ -362,30 +151,20 @@ function Main() {
   return (
     <SafeAreaView style={s.page} edges={['top']}>
       <StatusBar style={dark ? 'light' : 'dark'} />
-      <LinearGradient
-        colors={[palette.header, palette.background]}
-        style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 6 }}
-      >
+      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 6 }}>
         <View style={[s.row, { justifyContent: 'space-between' }]}>
           <Text accessibilityRole="header" style={[s.title, { flex: 1 }]}>
             {title}
           </Text>
-          <IconButton
-            icon={hidden ? 'eye-off-outline' : 'eye-outline'}
-            label={hidden ? 'Mostrar valores' : 'Ocultar valores'}
-            onPress={() => void toggleHidden()}
-            disabled={preferenceBusy}
-          />
+          {tab !== 'menu' && (
+            <IconButton
+              icon={hidden ? 'eye-off-outline' : 'eye-outline'}
+              label={hidden ? 'Mostrar valores' : 'Ocultar valores'}
+              onPress={() => void toggleHidden()}
+              disabled={preferenceBusy}
+            />
+          )}
         </View>
-        <Text style={s.muted}>
-          {tab === 'home'
-            ? 'Sua vida financeira, no seu celular.'
-            : tab === 'menu'
-              ? 'Tudo sob seu controle.'
-              : tab === 'charts'
-                ? 'Entenda para onde seu dinheiro vai.'
-                : 'Acompanhe seu mês.'}
-        </Text>
         {tab !== 'menu' && (
           <MonthSelector
             month={month}
@@ -396,7 +175,7 @@ function Main() {
             }}
           />
         )}
-      </LinearGradient>
+      </View>
       {tab === 'history' && ledger ? (
         <HistoryScreen
           ledger={ledger}
@@ -420,13 +199,28 @@ function Main() {
               <Text style={s.muted}>
                 Não desinstale o app. Você pode restaurar um backup no Menu.
               </Text>
+              {tab !== 'menu' && (
+                <Button secondary title="Recuperar uma cópia" onPress={() => chooseTab('menu')} />
+              )}
             </View>
           )}
           {tab === 'home' && (
             <>
-              <UpdateCard updates={updates} />
-              {ledger && <Home ledger={ledger} month={month} openHistory={openCategoryHistory} />}
+              {ledger && (
+                <HomeScreen
+                  ledger={ledger}
+                  month={month}
+                  openHistory={openCategoryHistory}
+                  onAdd={() => {
+                    if (!store.busy) setEntry(null);
+                  }}
+                  onCharts={() => chooseTab('charts')}
+                />
+              )}
             </>
+          )}
+          {tab === 'home' && (
+            <UpdateCard updates={updates} onOpenSettings={() => chooseTab('menu')} />
           )}
           {tab === 'charts' && ledger && (
             <Charts ledger={ledger} month={month} onCategory={openCategoryHistory} />
@@ -450,96 +244,46 @@ function Main() {
       {undo && (
         <View
           style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            alignItems: 'center',
             backgroundColor: palette.hero,
             paddingHorizontal: 20,
             paddingVertical: 12,
             gap: 8,
           }}
         >
-          <Text accessibilityLiveRegion="polite" style={{ color: 'white', fontSize: 15 }}>
+          <Text
+            accessibilityLiveRegion="polite"
+            style={{ color: palette.heroText, fontSize: 15, flexGrow: 1 }}
+          >
             Lançamento excluído.
           </Text>
-          <Button
-            title={store.busy ? 'Aguarde…' : 'Desfazer exclusão'}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Desfazer exclusão"
+            accessibilityState={{ disabled: store.busy }}
             onPress={() => void undoDelete()}
             disabled={store.busy}
-          />
+            style={({ pressed }) => ({
+              minHeight: 48,
+              paddingHorizontal: 12,
+              justifyContent: 'center',
+              opacity: store.busy ? 0.45 : pressed ? 0.65 : 1,
+            })}
+          >
+            <Text style={{ color: palette.heroText, fontWeight: '700', fontSize: 16 }}>
+              Desfazer
+            </Text>
+          </Pressable>
         </View>
       )}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: palette.card,
-          borderTopWidth: 1,
-          borderColor: palette.border,
-          paddingTop: 8,
-          paddingBottom: Math.max(10, insets.bottom),
-          paddingHorizontal: 5,
-        }}
-      >
-        {(['home', 'history', 'add', 'charts', 'menu'] as const).map((key) =>
-          key === 'add' ? (
-            <View key={key} style={{ flex: 1, alignItems: 'center' }}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Adicionar lançamento"
-                disabled={!ledger || store.busy}
-                onPress={() => setEntry(null)}
-                style={({ pressed }) => ({
-                  backgroundColor: palette.teal,
-                  borderRadius: 22,
-                  width: 55,
-                  height: 55,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: ledger && !store.busy ? (pressed ? 0.65 : 1) : 0.4,
-                })}
-              >
-                <Ionicons name="add" color={dark ? '#102D2A' : 'white'} size={32} />
-              </Pressable>
-            </View>
-          ) : (
-            <Pressable
-              key={key}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: tab === key }}
-              onPress={() => chooseTab(key)}
-              style={({ pressed }) => ({
-                flex: 1,
-                alignItems: 'center',
-                minHeight: 48,
-                paddingVertical: 4,
-                gap: 4,
-                opacity: pressed ? 0.65 : 1,
-              })}
-            >
-              <Ionicons
-                name={
-                  {
-                    home: 'home-outline',
-                    history: 'list-outline',
-                    charts: 'bar-chart-outline',
-                    menu: 'menu-outline',
-                  }[key] as React.ComponentProps<typeof Ionicons>['name']
-                }
-                size={23}
-                color={tab === key ? palette.teal : palette.muted}
-              />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: tab === key ? '700' : '400',
-                  color: tab === key ? palette.teal : palette.muted,
-                  textAlign: 'center',
-                }}
-              >
-                {{ home: 'Início', history: 'Histórico', charts: 'Gráficos', menu: 'Menu' }[key]}
-              </Text>
-            </Pressable>
-          ),
-        )}
-      </View>
+      <BottomNavigation
+        tab={tab}
+        onSelect={chooseTab}
+        onAdd={() => setEntry(null)}
+        addDisabled={!ledger || store.busy}
+      />
       {entry !== undefined && ledger && (
         <EntryForm
           entry={entry}
@@ -569,7 +313,7 @@ function Main() {
         transparent
         animationType="fade"
         onRequestClose={() => {
-          if (!store.busy) setPreview(null);
+          if (!store.busy && !backupBusy) cancelPreview();
         }}
       >
         <View
@@ -586,15 +330,15 @@ function Main() {
               uma cópia.
             </Text>
             <Button
-              title={store.busy ? 'Restaurando…' : 'Confirmar substituição'}
-              disabled={store.busy}
+              title={store.busy || backupBusy ? 'Restaurando…' : 'Confirmar substituição'}
+              disabled={store.busy || backupBusy}
               onPress={() => void restoreBackup()}
             />
             <Button
               secondary
               title="Cancelar"
-              disabled={store.busy}
-              onPress={() => setPreview(null)}
+              disabled={store.busy || backupBusy}
+              onPress={() => cancelPreview()}
             />
           </ScrollView>
         </View>

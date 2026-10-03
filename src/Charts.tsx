@@ -12,7 +12,7 @@ import {
   shiftMonth,
   totals,
 } from './finance';
-import { CategoryIcon, Chip, Empty } from './ui';
+import { CategoryIcon, Empty, SegmentedControl } from './ui';
 
 const percentage = (value: number) => `${value.toFixed(1).replace('.', ',')}%`;
 const shortMonth = (value: string) => monthName(value).split(' ')[0].slice(0, 3);
@@ -34,19 +34,19 @@ export function Charts({
   month: string;
   onCategory: (id: string) => void;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
   const [view, setView] = useState<'categories' | 'trend'>('categories');
   // Reset month-specific selection when navigating to a different reporting period.
   return (
     <>
-      <View style={s.wrap}>
-        <Chip selected={view === 'categories'} onPress={() => setView('categories')}>
-          Por categoria
-        </Chip>
-        <Chip selected={view === 'trend'} onPress={() => setView('trend')}>
-          Evolução mensal
-        </Chip>
-      </View>
+      <SegmentedControl
+        label="Visualização dos gráficos"
+        value={view}
+        onChange={setView}
+        options={[
+          { value: 'categories', label: 'Por categoria' },
+          { value: 'trend', label: 'Últimos 6 meses' },
+        ]}
+      />
       {view === 'categories' ? (
         <CategoryChart key={month} ledger={ledger} month={month} onCategory={onCategory} />
       ) : (
@@ -94,7 +94,7 @@ function CategoryChart({
       ) : (
         <View style={s.card}>
           <Text style={s.heading}>Para onde foi seu dinheiro</Text>
-          <Text style={s.muted}>Da maior para a menor despesa. Toque para ver os lançamentos.</Text>
+          <Text style={s.muted}>Toque em uma categoria para ver seus lançamentos.</Text>
           {rows.map((g) => (
             <Pressable
               key={g.category.id}
@@ -124,9 +124,6 @@ function CategoryChart({
               </View>
             </Pressable>
           ))}
-          <Text style={[s.muted, { fontSize: 12 }]}>
-            Cada barra representa a participação da categoria no total de despesas.
-          </Text>
           <View style={s.divider} />
           <Pressable
             accessibilityRole="button"
@@ -134,7 +131,7 @@ function CategoryChart({
             onPress={() => setDetails((v) => !v)}
             style={({ pressed }) => [styles.disclosure, { opacity: pressed ? 0.65 : 1 }]}
           >
-            <Text style={[s.text, { flex: 1, fontWeight: '600' }]}>Concentração dos gastos</Text>
+            <Text style={[s.text, { flex: 1, fontWeight: '600' }]}>Ver análise detalhada</Text>
             <Ionicons
               name={details ? 'chevron-up' : 'chevron-down'}
               size={20}
@@ -224,7 +221,7 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
   const hasData = months.some((m) => m.income || m.expense);
   return (
     <View style={s.card} onLayout={(e) => setWidth(Math.max(160, e.nativeEvent.layout.width - 36))}>
-      <Text style={s.heading}>Seu ritmo nos últimos seis meses</Text>
+      <Text style={s.heading}>Receitas e despesas</Text>
       <Text style={s.muted}>
         Compare o que entrou e saiu. Selecione um mês para ver os valores.
       </Text>
@@ -340,9 +337,6 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
           text="Os últimos seis meses vão aparecer conforme você registrar receitas e despesas."
         />
       )}
-      <Text style={[s.muted, { fontSize: 12 }]}>
-        O saldo considera apenas as receitas e despesas de cada mês.
-      </Text>
     </View>
   );
 }

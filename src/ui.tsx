@@ -1,9 +1,124 @@
 import React, { ReactNode } from 'react';
-import { Pressable, Text, TextInput, TextInputProps, View } from 'react-native';
+import {
+  Pressable,
+  Text,
+  TextInput,
+  TextInputProps,
+  View,
+  StyleProp,
+  ViewStyle,
+  useWindowDimensions,
+} from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Category, categoryColor, monthName, today } from './finance';
 
 import { useAppearance } from './Appearance';
+import { spacing, radius, controlSize, typography } from './theme/tokens';
+
+export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  const { s } = useAppearance();
+  return <View style={[s.card, style]}>{children}</View>;
+}
+export function SectionHeader({ children }: { children: ReactNode }) {
+  const { s } = useAppearance();
+  return (
+    <Text accessibilityRole="header" style={s.heading}>
+      {children}
+    </Text>
+  );
+}
+export function MetricCard({
+  label,
+  value,
+  tone,
+  stacked,
+}: {
+  label: string;
+  value: string;
+  tone: 'income' | 'expense';
+  stacked?: boolean;
+}) {
+  const { palette, s } = useAppearance();
+  const { width, fontScale } = useWindowDimensions();
+  const fullWidth = stacked ?? (width < 360 || fontScale > 1.2);
+  return (
+    <Card
+      style={{
+        flexGrow: 1,
+        flexBasis: fullWidth ? '100%' : 130,
+        backgroundColor: palette.soft,
+        borderWidth: 1,
+        borderColor: palette.border,
+        gap: spacing.xs,
+      }}
+    >
+      <Text style={[s.muted, { color: palette[tone] }]}>{label}</Text>
+      <Text style={[typography.amount, { color: palette[tone] }]}>{value}</Text>
+    </Card>
+  );
+}
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+  disabled = false,
+}: {
+  options: ReadonlyArray<{ value: T; label: string }>;
+  value: T;
+  onChange: (value: T) => void;
+  label: string;
+  disabled?: boolean;
+}) {
+  const { palette, s } = useAppearance();
+  const { width, fontScale } = useWindowDimensions();
+  const stacked = width < 360 || fontScale > 1.2;
+  return (
+    <View
+      accessibilityLabel={label}
+      style={{
+        flexDirection: stacked ? 'column' : 'row',
+        backgroundColor: palette.soft,
+        borderRadius: radius.control,
+        padding: spacing.xs,
+        gap: spacing.xs,
+      }}
+    >
+      {options.map((option) => (
+        <Pressable
+          key={option.value}
+          accessibilityRole="button"
+          accessibilityLabel={option.label}
+          accessibilityState={{ selected: value === option.value, disabled }}
+          disabled={disabled}
+          onPress={() => onChange(option.value)}
+          style={({ pressed }) => ({
+            flex: stacked ? undefined : 1,
+            minHeight: controlSize.touch,
+            justifyContent: 'center',
+            padding: spacing.sm,
+            borderRadius: radius.control,
+            backgroundColor: value === option.value ? palette.selected : 'transparent',
+            opacity: disabled ? 0.45 : pressed ? 0.65 : 1,
+          })}
+        >
+          <Text
+            style={[
+              s.text,
+              {
+                textAlign: 'center',
+                color: value === option.value ? palette.teal : palette.navy,
+                fontWeight: value === option.value ? '700' : '400',
+              },
+            ]}
+          >
+            {option.label}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
 
 export function Button({
   title,
@@ -219,9 +334,13 @@ export function MonthSelector({
 export function Empty({
   title = 'Tudo pronto para começar',
   text = 'Adicione seu primeiro lançamento no botão +.',
+  actionLabel,
+  onAction,
 }: {
   title?: string;
   text?: string;
+  actionLabel?: string;
+  onAction?: () => void;
 }) {
   const { palette, s } = useAppearance();
   return (
@@ -229,6 +348,7 @@ export function Empty({
       <Ionicons name="wallet-outline" color={palette.teal} size={40} />
       <Text style={[s.heading, { textAlign: 'center' }]}>{title}</Text>
       <Text style={[s.muted, { textAlign: 'center' }]}>{text}</Text>
+      {!!actionLabel && onAction && <Button title={actionLabel} onPress={onAction} />}
     </View>
   );
 }

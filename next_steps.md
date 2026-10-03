@@ -19,7 +19,7 @@ Roteiro da versão 1.4.0, mantendo Android, dados locais, gratuidade e distribui
 | Acessibilidade e legibilidade | Rótulos, estados dos filtros, erros e alternativas textuais dos gráficos | Recursos presentes; contraste e fontes ampliadas pendentes de validação |
 | Atualização sobre versão anterior e uso em modo avião | `app.json`, `plugins/withMeuSaldo.js`, módulo nativo e arquivo local | Fluxo presente; preservação de dados na instalação e uso offline pendentes de validação |
 
-`npm run typecheck` passou nesta conferência. A compilação local foi interrompida a pedido do usuário após dificuldades com caminhos longos e caches do Windows; não foi gerado um novo APK. Não há suíte de testes própria nem configuração de emulador no projeto. A conferência de uso continua sugerida em aparelho físico, sem adicionar emulador ou uma suíte extensa de testes.
+`npm run typecheck` passou nesta conferência. A compilação local foi interrompida a pedido do usuário após dificuldades com caminhos longos e caches do Windows; não foi gerado um novo APK. Não há suíte de testes da aplicação nem configuração de emulador no projeto. A conferência de uso continua sugerida em aparelho físico, sem adicionar emulador ou uma suíte extensa de testes.
 
 ## Melhorias desta entrega
 
@@ -85,7 +85,22 @@ Esta lista é uma conferência de uso dos recursos implementados. Ainda não há
 ## Implementação concluída e distribuição posterior
 
 - Concluído: uniformizar os feedbacks de toque identificados na prioridade 2; checagem TypeScript passou.
-- Geração do APK: usar o workflow existente **Publicar APK Android** no GitHub Actions. Para obter um candidato sem publicar, executar manualmente com `publish` desmarcado; ele compila em Linux, verifica a assinatura original e disponibiliza o artefato `meu-saldo-candidate`. A compilação local deixou de ser requisito desta implementação.
+- Geração do APK: usar o workflow existente **Gerar candidato Android** no GitHub Actions. Executar manualmente para gerar um candidato sem publicação; ele compila em Linux, verifica a assinatura original e disponibiliza o artefato `meu-saldo-candidate`. A compilação local deixou de ser requisito desta implementação.
 - Conferência no celular: sugestão para uma etapa posterior, quando houver aparelho disponível. Não foi executada e não bloqueia a implementação; registrar resultados em `docs/ui-validation.md` quando ocorrer.
 
-Não foi adicionada suíte de testes. Checagem de tipos e compilação verificam a entrega técnica; a avaliação visual e de usabilidade continua manual.
+Não foi adicionada suíte de testes da aplicação; os scripts de release possuem verificações isoladas. Checagem de tipos e compilação verificam a entrega técnica; a avaliação visual e de usabilidade continua manual.
+
+## Arquitetura e publicação — 02/10/2026
+
+- `release:prepare` alinha app/package/lockfile, incrementa versionCode e preserva notas anteriores; a versão atual não foi alterada nesta implementação.
+- Candidato e publicação são workflows separados. Publicação seleciona uma execução conferida e reutiliza seus bytes, manifesto, notas e commit.
+- Início, cartão de atualização, navegação inferior e backup foram extraídos de `App.tsx`.
+- Tokens/paletas, cartões de métricas, cabeçalhos, filtros segmentados e linha adaptável do Histórico foram incorporados a partir do estudo do Aristocat.
+- Preservados: centavos, datas civis, JSON/AtomicFile, assinatura/pacote, ocultação global, dois temas e lista virtualizada.
+- Conferência da interface e execução real dos novos workflows continuam pendentes. Consulte [releases](docs/releases.md).
+
+## Simplificação de UI/UX — 02/10/2026
+
+Implementados cabeçalho compacto, resumo de quatro categorias no Início, totais compactos no Histórico, detalhes exclusivos no Menu, atualização resumida, formulário com escolhas progressivas e edição de categorias com opções recolhidas e Salvar fixo. As telas continuam com dados locais, dois temas, ocultação global, lista virtualizada e confirmação de operações destrutivas.
+
+Tipos e formatação passaram; a conferência em aparelho físico continua pendente, com roteiro atualizado em [docs/ui-validation.md](docs/ui-validation.md).

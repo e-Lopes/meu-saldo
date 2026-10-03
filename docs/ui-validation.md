@@ -1,6 +1,6 @@
 # Validação manual — Meu Saldo 1.4.0
 
-Não foi adicionada suíte de testes. A validação técnica usa checagem TypeScript e compilação Android; a conferência de uso deve ser manual em aparelho físico, com dados fictícios. Não usar emulador neste projeto.
+Não há suíte de testes da aplicação; os scripts de release possuem verificações isoladas. A validação técnica usa checagem TypeScript e compilação Android; a conferência de uso deve ser manual em aparelho físico, com dados fictícios. Não usar emulador neste projeto.
 
 ## Recursos implementados
 
@@ -16,7 +16,7 @@ Não foi adicionada suíte de testes. A validação técnica usa checagem TypeSc
 
 Os recursos das três prioridades foram localizados no código e `npm run typecheck` passou. A implementação está concluída, incluindo feedback de toque no botão +, abas, expansor de concentração e seletores de mês dos gráficos. A conferência visual e de uso em aparelho físico ainda não tem resultados registrados. A matriz por item está em [next_steps.md](../next_steps.md).
 
-A compilação local foi tentada e interrompida a pedido do usuário após dificuldades com caminhos longos e caches do Windows. Não foi gerado um novo APK. Para distribuição, usar o workflow existente do GitHub Actions; a execução manual com `publish` desmarcado gera um candidato sem publicar. A conferência no celular fica sugerida para uma etapa posterior e não bloqueia a conclusão da implementação. Nenhum aparelho foi detectado pelo ADB nesta sessão.
+A compilação local foi tentada e interrompida a pedido do usuário após dificuldades com caminhos longos e caches do Windows. Não foi gerado um novo APK. Para distribuição, usar o workflow existente do GitHub Actions; o workflow **Gerar candidato Android** gera um candidato sem publicar; **Publicar candidato Android** promove a execução conferida sem recompilar. A conferência no celular fica sugerida para uma etapa posterior e não bloqueia a conclusão da implementação. Nenhum aparelho foi detectado pelo ADB nesta sessão.
 
 ## Conferência complementar no celular
 
@@ -35,3 +35,33 @@ A revisão do código e a checagem de tipos não substituem a avaliação visual
 Conferir no aparelho: buscar `alimentacao` encontra Alimentação mesmo sem descrição; combinar busca e filtros atualiza os três totais; ocultar valores mascara os totais adicionais; ampliar fontes permite ler os cartões e alcançar os botões de restauração; alterar a data para outro mês exibe o aviso.
 
 Checagem TypeScript concluída para estes ajustes. A validação visual no aparelho continua pendente; não foi compilado um novo APK nesta etapa.
+
+## Organização e design adaptados do Aristocat — 02/10/2026
+
+Conferir no aparelho os cartões de receitas/despesas no Início e Histórico, filtros segmentados, valores alinhados à direita em telas largas e empilhados em telas estreitas/fontes ampliadas. Validar claro, escuro e sistema; ocultação também deve mascarar métricas e rótulos de acessibilidade.
+
+No backup: cancelar a confirmação, cancelar o seletor, importar arquivo inválido, cancelar a prévia e confirmar restauração. Verificar que somente restauração concluída limpa filtros e desfazer. Na navegação, conferir botão +, Voltar e preservação do mês.
+
+Estas mudanças passaram pela checagem de tipos e formatação; não houve nova instalação ou avaliação visual nesta etapa.
+
+## Simplificação da interface — 02/10/2026
+
+- Cabeçalho sem slogans ou gradiente; o botão de ocultação aparece nas telas financeiras.
+- Início com saldo, receitas/despesas e até quatro principais categorias. “Ver todos os gastos” abre Gráficos; mês vazio oferece ação para adicionar o primeiro lançamento.
+- Histórico mantém lista virtualizada, saldo filtrado, busca e tipos/categorias, com totais compactos em texto.
+- Menu com uma seção de detalhes aberta por vez. Aparência, cópia de segurança, atualizações, ajuda e privacidade ficam recolhidas. Falha de leitura abre recuperação; atualização disponível abre seu detalhe.
+- Aviso de atualização compacto no Início; notas da versão aparecem somente ao abrir “O que mudou”.
+- Formulário com categoria escolhida por lista expansível, busca para mais de seis categorias, descrição opcional recolhida e ação Salvar fixa. Limpar valor fica em um ícone junto ao campo. O aviso de outro mês continua visível quando necessário.
+- Categorias com lista de edição sem ações destrutivas repetidas. Cor/ícone e opções de arquivamento, exclusão ou reativação aparecem sob demanda; Salvar permanece acessível com o teclado.
+- Desfazer exclusão usa uma faixa compacta, mantendo o prazo ajustado pelo Android.
+
+Conferência manual sugerida:
+
+1. No Início, conferir mês vazio, somente receitas e mais de quatro categorias; confirmar acesso a todos os gastos e ao histórico de uma categoria.
+2. No formulário, tentar salvar sem valor ou categoria; buscar uma categoria com/sem acento; alternar receita/despesa; fechar a lista com Voltar; preencher e recolher descrição sem perder o texto; alterar a data para outro mês.
+3. Em Categorias, criar somente com nome, personalizar cor/ícone, editar com teclado aberto, arquivar uma categoria usada, excluir uma sem registros e reativar uma arquivada. Conferir confirmação ao descartar alterações ainda não salvas.
+4. No Menu, alternar detalhes, tema e cópia; confirmar que o arquivo exportado continua recuperável. Ao falhar a leitura, usar o atalho de recuperação.
+5. Conferir atualização disponível, dispensar aviso, abrir as notas e cancelar download. Em fonte ampliada, todos os controles e textos devem continuar alcançáveis.
+6. Conferir temas, ocultação no Início/Histórico/Gráficos e rótulos de acessibilidade. Excluir e desfazer deve recuperar exatamente o registro anterior.
+
+`npm run validate` passou. Não houve compilação de APK nem validação visual em aparelho físico nesta etapa.

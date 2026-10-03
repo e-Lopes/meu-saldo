@@ -12,68 +12,42 @@ import Native from './native';
 import { money as formatMoney } from './finance';
 import { errorMessage } from './useLedger';
 
-export const lightColors = {
-  teal: '#247571',
-  navy: '#17304F',
-  background: '#F3F6F8',
-  muted: '#59697C',
-  border: '#DEE6EC',
-  expense: '#AC423D',
-  income: '#21786D',
-  card: '#FFFFFF',
-  soft: '#EAF0F4',
-  selected: '#E5F3F0',
-  hero: '#17304F',
-  heroText: '#FFFFFF',
-  heroMuted: '#C6D8E8',
-  header: '#D6EFEB',
-  track: '#EDF1F4',
-};
-export type Colors = typeof lightColors;
-export const darkColors: Colors = {
-  teal: '#82D9CA',
-  navy: '#EDF3FA',
-  background: '#101B28',
-  muted: '#AABACA',
-  border: '#35475A',
-  expense: '#FFAFA8',
-  income: '#84D9BE',
-  card: '#1B2B3D',
-  soft: '#23364A',
-  selected: '#244740',
-  hero: '#1D3C4E',
-  heroText: '#FFFFFF',
-  heroMuted: '#C6D8E8',
-  header: '#193C3E',
-  track: '#34495D',
-};
+import { lightColors, darkColors, Colors } from './theme/palettes';
+import { spacing, radius, controlSize, typography } from './theme/tokens';
+export { lightColors, darkColors };
+export type { Colors };
 export const createStyles = (p: Colors) =>
   StyleSheet.create({
     page: { flex: 1, backgroundColor: p.background },
-    content: { padding: 20, gap: 18, paddingBottom: 30 },
-    card: { backgroundColor: p.card, padding: 18, borderRadius: 20, gap: 12 },
+    content: { padding: spacing.screen, gap: spacing.card, paddingBottom: 30 },
+    card: {
+      backgroundColor: p.card,
+      padding: spacing.card,
+      borderRadius: radius.card,
+      gap: spacing.md,
+    },
     row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    title: { color: p.navy, fontSize: 23, fontWeight: '700' },
-    heading: { color: p.navy, fontSize: 18, fontWeight: '700' },
-    text: { color: p.navy, fontSize: 15, lineHeight: 22 },
-    muted: { color: p.muted, fontSize: 14, lineHeight: 21 },
+    title: { ...typography.title, color: p.navy },
+    heading: { ...typography.heading, color: p.navy },
+    text: { ...typography.body, color: p.navy },
+    muted: { ...typography.muted, color: p.muted },
     label: { color: p.navy, fontSize: 15, fontWeight: '600', marginBottom: 8 },
     input: {
       borderWidth: 1,
       borderColor: p.border,
       backgroundColor: p.card,
-      borderRadius: 14,
+      borderRadius: radius.control,
       paddingHorizontal: 14,
       paddingVertical: 13,
       fontSize: 17,
       color: p.navy,
-      minHeight: 50,
+      minHeight: controlSize.input,
     },
     button: {
       backgroundColor: p.teal,
-      borderRadius: 14,
-      minHeight: 48,
+      borderRadius: radius.control,
+      minHeight: controlSize.touch,
       padding: 13,
       alignItems: 'center',
       justifyContent: 'center',
@@ -85,13 +59,13 @@ export const createStyles = (p: Colors) =>
       textAlign: 'center',
     },
     chip: {
-      borderRadius: 14,
+      borderRadius: radius.control,
       borderWidth: 1,
       borderColor: p.border,
       backgroundColor: p.card,
       paddingHorizontal: 14,
       paddingVertical: 10,
-      minHeight: 48,
+      minHeight: controlSize.touch,
       justifyContent: 'center',
     },
     chipSelected: { borderColor: p.teal, backgroundColor: p.selected },

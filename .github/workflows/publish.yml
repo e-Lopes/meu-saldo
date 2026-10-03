@@ -1,0 +1,72 @@
+name: Publicar candidato Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: ID da execução de Gerar candidato Android a publicar
+        type: string
+        required: true
+      confirm_publication:
+        description: Publicar este candidato no GitHub Releases
+        type: boolean
+        default: false
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: inputs.confirm_publication
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Identificar execução e commit do candidato
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+        run: python scripts/candidate_source.py
+      - name: Obter exatamente o artefato conferido
+        uses: actions/download-artifact@v4
+        with:
+          name: meu-saldo-candidate
+          path: ${{ runner.temp }}/meu-saldo-reviewed
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+      - name: Obter código e certificado da compilação conferida
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.candidate.outputs.sha }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Verificar assinatura, versão, hash e notas sem recompilar
+        env:
+          CANDIDATE_DIR: ${{ runner.temp }}/meu-saldo-reviewed
+        run: |
+          sdkmanager 'build-tools;36.0.0' >/dev/null
+          python scripts/prepare_release.py --verify-only \
+            --apk "$CANDIDATE_DIR/meu-saldo.apk" --output "$CANDIDATE_DIR" \
+            --aapt "$ANDROID_HOME/build-tools/36.0.0/aapt" \
+            --apksigner "$ANDROID_HOME/build-tools/36.0.0/apksigner"
+      - name: Publicar os mesmos arquivos do candidato
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CANDIDATE_DIR: ${{ runner.temp }}/meu-saldo-reviewed
+          CANDIDATE_SHA: ${{ steps.candidate.outputs.sha }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+        run: python scripts/publish_candidate.py

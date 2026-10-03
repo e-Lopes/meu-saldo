@@ -1,18 +1,16 @@
-Meu Saldo 1.4.0 — Mais conforto no dia a dia
+# Meu Saldo 1.5.0 — Uma interface mais simples
 
-- Temas claro, escuro e do sistema, com preferência local.
-- Um toque para ocultar valores no Início, Histórico e Gráficos.
-- Desfazer exclusão de lançamento, preservando o registro original.
-- Formulário começa no mês visualizado, com erros junto ao valor e botão Salvar acessível.
-- Histórico virtualizado, saldo filtrado visível e limpeza dos filtros.
-- Busca no Histórico por descrição ou categoria, sem distinguir acentos, com receitas, despesas e saldo dos resultados.
-- Gráficos por categoria com acesso ao Histórico e comparação dos últimos seis meses.
-- Menu reorganizado com privacidade, ajuda e cópia de segurança recolhida.
-- Início adaptado a telas pequenas e fontes ampliadas; confirmação de restauração com rolagem.
-- Aviso ao registrar em outro mês e feedback de toque nos botões e nas abas.
-- Busca de categorias, seção de arquivadas e contagem de lançamentos.
-- Data da última exportação concluída e lembrete discreto para salvar uma cópia.
-- Atalho ao mês atual, filtros preservados na edição e navegação pelo botão Voltar.
-- Mesmo identificador, assinatura e formato de dados locais.
+- Início mais compacto, com saldo, receitas, despesas e as quatro principais categorias de gastos.
+- Acesso a todos os gastos pelos Gráficos e ação para adicionar um lançamento em meses vazios.
+- Menu com detalhes sob demanda para aparência, cópia de segurança, atualizações, ajuda e privacidade.
+- Cadastro mais enxuto: seleção de categoria com busca, descrição opcional e botão Salvar acessível com o teclado aberto.
+- Histórico com totais compactos, filtros segmentados e linhas adaptadas à largura da tela e ao tamanho da fonte.
+- Categorias com busca sem distinguir acentos, personalização recolhida e opções de arquivamento, exclusão e reativação dentro da edição.
+- Aviso de atualização discreto, notas da versão recolhidas e faixa compacta para desfazer exclusões.
+- Preparação de versões automatizada e publicação do mesmo APK gerado como candidato, sem recompilar.
 
-Instale sobre a versão anterior, sem desinstalar. O app continua gratuito e funciona offline; a conexão é usada apenas para buscar e baixar atualizações. A instalação da nova versão precisa da confirmação do Android.
+Mantidos os temas claro, escuro e do sistema, a ocultação de valores, o uso offline e o formato dos dados locais.
+
+Instale sobre a versão anterior, sem desinstalar. Salve uma cópia de segurança antes de atualizar.
+
+Validação: checagem de tipos, formatação e testes dos scripts de release. A conferência visual e de uso em aparelho físico ainda não foi realizada nesta versão.
