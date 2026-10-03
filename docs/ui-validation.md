@@ -95,3 +95,9 @@ No aparelho, além do roteiro anterior, conferir:
 5. Seletores reais de backup, gravação interrompida, exclusão/desfazer, modo avião e cancelamento de download.
 
 Registrar aparelho, Android, versão anterior e resultado de cada cenário quando executado. As prioridades 1 e 2 do `next_steps.md` permanecem como roteiro dessa conferência física.
+
+## Primeira publicação automática — 03/10/2026
+
+A [execução 37097752926](https://github.com/e-Lopes/meu-saldo/actions/runs/37097752926) gerou e publicou a [versão 1.0.0](https://github.com/e-Lopes/meu-saldo/releases/tag/v1.0.0), com `versionCode` 8. Passaram tipos, formatação, 11 testes dos scripts de release, compilação Android em Linux e verificações de assinatura, identificador, versão, tamanho, SHA-256 e correspondência das notas. A publicação reutilizou o APK gerado e marcou a release como `latest`.
+
+Não houve instalação nem conferência em aparelho físico durante esta publicação. A geração automática não altera os cenários manuais pendentes acima. Para conferir a atualização a partir da 1.5.0, use Menu → Atualizações → Verificar atualizações e confirme a instalação no Android, sem desinstalar.

@@ -2,7 +2,7 @@
 
 Atualizado em **03/10/2026**, após a publicação da **versão 1.5.0** (`versionCode` 7). O projeto continua Android, gratuito, offline, com dados locais e distribuição por APK assinado.
 
-**Próxima versão preparada: 1.0.0 (`versionCode` 8).** A numeração pública foi reiniciada a pedido do responsável pelo projeto; o código interno continua crescente. Esta entrega sucede a 1.5.0 e ainda não foi compilada nem publicada. As notas da 1.5.0 foram preservadas em `release/history/1.5.0.md`.
+**Versão atual publicada: [1.0.0](https://github.com/e-Lopes/meu-saldo/releases/tag/v1.0.0) (`versionCode` 8).** A numeração pública foi reiniciada a pedido do responsável pelo projeto; o código interno continua crescente. Esta entrega sucede a 1.5.0 e foi gerada e publicada automaticamente na [execução 37097752926](https://github.com/e-Lopes/meu-saldo/actions/runs/37097752926), com a assinatura original. As notas da 1.5.0 foram preservadas em `release/history/1.5.0.md`. A conferência no celular permanece pendente.
 
 ## Entrega concluída
 
