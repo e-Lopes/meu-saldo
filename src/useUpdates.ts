@@ -7,6 +7,7 @@ export function useUpdates() {
   const [release, setRelease] = useState<Release | null>(null);
   const [checking, setChecking] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [installing, setInstalling] = useState(false);
   const [progress, setProgress] = useState(0);
   const [ready, setReady] = useState(false);
   const [message, setMessage] = useState('');
@@ -14,8 +15,10 @@ export function useUpdates() {
   const inProgress = useRef(false);
   const active = useRef(true);
   const releaseRef = useRef<Release | null>(null);
+  const releaseRevision = useRef(0);
   const permissionPending = useRef<Release | null>(null);
   const applyRelease = useCallback((value: Release | null) => {
+    releaseRevision.current += 1;
     if (releaseRef.current?.sha256 !== value?.sha256) {
       setReady(false);
       setDismissed(false);
@@ -74,12 +77,15 @@ export function useUpdates() {
   }, []);
   useEffect(() => {
     active.current = true;
+    const cachedRevision = releaseRevision.current;
     Native.cachedUpdate()
       .then((value) => {
-        if (active.current) applyRelease(value);
+        if (active.current && releaseRevision.current === cachedRevision) applyRelease(value);
       })
-      .catch(() => {});
-    void check();
+      .catch(() => {})
+      .then(() => {
+        if (active.current) void check();
+      });
     const progressSub = Native.addListener('updateProgress', (event) => {
       if (active.current) setProgress(event.progress);
     });
@@ -105,7 +111,14 @@ export function useUpdates() {
     const value = releaseRef.current;
     if (!value || inProgress.current) return;
     if (ready) {
-      await install(value);
+      inProgress.current = true;
+      setInstalling(true);
+      try {
+        await install(value);
+      } finally {
+        inProgress.current = false;
+        if (active.current) setInstalling(false);
+      }
       return;
     }
     inProgress.current = true;
@@ -132,6 +145,7 @@ export function useUpdates() {
     release,
     checking,
     downloading,
+    installing,
     progress,
     ready,
     message,

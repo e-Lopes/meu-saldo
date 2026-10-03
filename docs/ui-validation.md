@@ -1,4 +1,4 @@
-# Validação manual — Meu Saldo 1.4.0
+# Validação manual — Meu Saldo
 
 Não há suíte de testes da aplicação; os scripts de release possuem verificações isoladas. A validação técnica usa checagem TypeScript e compilação Android; a conferência de uso deve ser manual em aparelho físico, com dados fictícios. Não usar emulador neste projeto.
 
@@ -65,3 +65,33 @@ Conferência manual sugerida:
 6. Conferir temas, ocultação no Início/Histórico/Gráficos e rótulos de acessibilidade. Excluir e desfazer deve recuperar exatamente o registro anterior.
 
 `npm run validate` passou. Não houve compilação de APK nem validação visual em aparelho físico nesta etapa.
+
+## Revisão local após a versão 1.5.0 — 03/10/2026
+
+`npm run validate` passou com `noUnusedLocals` e `noUnusedParameters` habilitados. Os nove testes existentes dos scripts de release passaram. Verificações temporárias, executadas com dados fictícios e dependências nativas simuladas, aprovaram:
+
+| Cenário | Resultado local |
+| --- | --- |
+| Centavos, valores inválidos, saldo negativo, mês vazio e acumulado por categoria | Aprovado |
+| Troca de dezembro/janeiro e rejeição de data civil inexistente | Aprovado |
+| Busca sem acentos e rejeição de categoria inexistente/registro duplicado | Aprovado |
+| Backup dos 24 ícones e emojis compostos; rejeição de texto e múltiplos emojis | Aprovado |
+| Cancelar importação, arquivo inválido e cancelar prévia sem substituir dados | Aprovado com módulo nativo simulado |
+| Restauração confirmada chama limpeza somente depois de salvar | Aprovado com módulo nativo simulado |
+| Cancelar exportação/seletor não atualiza a data; exportação concluída atualiza | Aprovado com módulo nativo simulado |
+| Cache atrasado de atualização não sobrescreve versão mais recente | Aprovado com módulo nativo simulado |
+| Toques repetidos em instalar não abrem chamadas simultâneas | Aprovado com módulo nativo simulado |
+
+Removida a cópia local antiga em `.tools/legacy-compose/`, a dependência de gradiente, imports e tokens sem uso, reexportações e a apresentação antiga do aviso de atualização. Os recursos financeiros e o módulo nativo atual permanecem referenciados pelo app.
+
+O ADB não encontrou aparelho conectado. Estas verificações não comprovam comportamento no Android real. Não houve geração de APK, instalação, publicação nem conferência visual nesta revisão.
+
+No aparelho, além do roteiro anterior, conferir:
+
+1. Seleção azul em ambas as visualizações de Gráficos no tema escuro; tema claro e sistema.
+2. Criar/editar categoria com ícone e emoji, reiniciar e exportar/restaurar; confirmar preservação das categorias anteriores.
+3. Nomes longos e fontes ampliadas nos filtros do Histórico e formulário; TalkBack deve anunciar a categoria sem repetir o emoji decorativo.
+4. Instalar a atualização sobre a versão anterior sem desinstalar e verificar os registros e preferências após reiniciar.
+5. Seletores reais de backup, gravação interrompida, exclusão/desfazer, modo avião e cancelamento de download.
+
+Registrar aparelho, Android, versão anterior e resultado de cada cenário quando executado. As prioridades 1 e 2 do `next_steps.md` permanecem como roteiro dessa conferência física.

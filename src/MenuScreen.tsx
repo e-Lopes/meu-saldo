@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useAppearance } from './Appearance';
 import { Ledger } from './finance';

@@ -15,6 +15,15 @@ import {
 import { CategoryIcon, Empty, SegmentedControl } from './ui';
 
 const percentage = (value: number) => `${value.toFixed(1).replace('.', ',')}%`;
+function useChartAppearance() {
+  const appearance = useAppearance();
+  return {
+    ...appearance,
+    palette: appearance.dark
+      ? { ...appearance.palette, selected: '#263F60', teal: '#A9CCFF' }
+      : appearance.palette,
+  };
+}
 const shortMonth = (value: string) => monthName(value).split(' ')[0].slice(0, 3);
 const axisMoney = (cents: number) => {
   const value = cents / 100;
@@ -35,6 +44,7 @@ export function Charts({
   onCategory: (id: string) => void;
 }) {
   const [view, setView] = useState<'categories' | 'trend'>('categories');
+  const { palette } = useChartAppearance();
   // Reset month-specific selection when navigating to a different reporting period.
   return (
     <>
@@ -42,6 +52,8 @@ export function Charts({
         label="Visualização dos gráficos"
         value={view}
         onChange={setView}
+        selectedBackground={palette.selected}
+        selectedForeground={palette.teal}
         options={[
           { value: 'categories', label: 'Por categoria' },
           { value: 'trend', label: 'Últimos 6 meses' },
@@ -65,7 +77,7 @@ function CategoryChart({
   month: string;
   onCategory: (id: string) => void;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s, money, hidden } = useChartAppearance();
   const styles = chartStyles(palette);
   const rows = groups(ledger, month);
   const summary = totals(monthEntries(ledger, month));
@@ -206,7 +218,7 @@ function CategoryChart({
 }
 
 function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s, money, hidden } = useChartAppearance();
   const styles = chartStyles(palette);
   const months = Array.from({ length: 6 }, (_, i) => {
     const key = shiftMonth(month, i - 5);
@@ -342,7 +354,7 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
 }
 
 function Detail({ label, value, color }: { label: string; value: string; color: string }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { s } = useAppearance();
   return (
     <View style={[s.wrap, { justifyContent: 'space-between', gap: 4 }]}>
       <Text style={s.text}>{label}</Text>
@@ -351,7 +363,7 @@ function Detail({ label, value, color }: { label: string; value: string; color: 
   );
 }
 function Legend({ color, label }: { color: string; label: string }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { s } = useAppearance();
   return (
     <View style={s.row}>
       <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />

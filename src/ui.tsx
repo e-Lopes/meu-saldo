@@ -10,6 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { categoryIconOptions } from './categoryIcons';
 import { Category, categoryColor, monthName, today } from './finance';
 
 import { useAppearance } from './Appearance';
@@ -63,12 +64,16 @@ export function SegmentedControl<T extends string>({
   onChange,
   label,
   disabled = false,
+  selectedBackground,
+  selectedForeground,
 }: {
   options: ReadonlyArray<{ value: T; label: string }>;
   value: T;
   onChange: (value: T) => void;
   label: string;
   disabled?: boolean;
+  selectedBackground?: string;
+  selectedForeground?: string;
 }) {
   const { palette, s } = useAppearance();
   const { width, fontScale } = useWindowDimensions();
@@ -98,7 +103,8 @@ export function SegmentedControl<T extends string>({
             justifyContent: 'center',
             padding: spacing.sm,
             borderRadius: radius.control,
-            backgroundColor: value === option.value ? palette.selected : 'transparent',
+            backgroundColor:
+              value === option.value ? (selectedBackground ?? palette.selected) : 'transparent',
             opacity: disabled ? 0.45 : pressed ? 0.65 : 1,
           })}
         >
@@ -107,7 +113,7 @@ export function SegmentedControl<T extends string>({
               s.text,
               {
                 textAlign: 'center',
-                color: value === option.value ? palette.teal : palette.navy,
+                color: value === option.value ? (selectedForeground ?? palette.teal) : palette.navy,
                 fontWeight: value === option.value ? '700' : '400',
               },
             ]}
@@ -172,7 +178,7 @@ export function IconButton({
   onPress: () => void;
   disabled?: boolean;
 }) {
-  const { palette, s } = useAppearance();
+  const { palette } = useAppearance();
   return (
     <Pressable
       onPress={onPress}
@@ -225,7 +231,13 @@ export function Chip({
       <View style={[s.row, { flexWrap: 'wrap' }]}>
         {React.Children.map(children, (child) =>
           typeof child === 'string' || typeof child === 'number' ? (
-            <Text style={[s.text, selected && { color: palette.teal, fontWeight: '600' }]}>
+            <Text
+              style={[
+                s.text,
+                { flexShrink: 1 },
+                selected && { color: palette.teal, fontWeight: '600' },
+              ]}
+            >
               {child}
             </Text>
           ) : (
@@ -236,16 +248,6 @@ export function Chip({
     </Pressable>
   );
 }
-const categoryIcons: Record<string, React.ComponentProps<typeof Ionicons>['name']> = {
-  '🍴': 'restaurant-outline',
-  '🚗': 'car-outline',
-  '🏠': 'home-outline',
-  '🎬': 'film-outline',
-  '●': 'shapes-outline',
-  '💼': 'briefcase-outline',
-  '🛒': 'cart-outline',
-  '❤': 'heart-outline',
-};
 export function CategoryIcon({
   category,
   size = 42,
@@ -253,10 +255,12 @@ export function CategoryIcon({
   category: Pick<Category, 'color' | 'icon'>;
   size?: number;
 }) {
-  const { palette, s } = useAppearance();
+  const { palette } = useAppearance();
   const color = categoryColor(category.color);
   return (
     <View
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
       style={{
         width: size,
         height: size,
@@ -266,11 +270,20 @@ export function CategoryIcon({
         justifyContent: 'center',
       }}
     >
-      <Ionicons
-        name={categoryIcons[category.icon] ?? 'shapes-outline'}
-        size={size * 0.55}
-        color={palette.navy}
-      />
+      {category.icon.startsWith('emoji:') ? (
+        <Text allowFontScaling={false} style={{ fontSize: size * 0.55 }}>
+          {category.icon.slice(6)}
+        </Text>
+      ) : (
+        <Ionicons
+          name={
+            categoryIconOptions.find((option) => option.value === category.icon)?.glyph ??
+            'shapes-outline'
+          }
+          size={size * 0.55}
+          color={palette.navy}
+        />
+      )}
     </View>
   );
 }
@@ -315,7 +328,7 @@ export function MonthSelector({
   onShift: (delta: number) => void;
   onCurrent: () => void;
 }) {
-  const { palette, s } = useAppearance();
+  const { s } = useAppearance();
   return (
     <View>
       <View style={[s.row, { justifyContent: 'space-between' }]}>

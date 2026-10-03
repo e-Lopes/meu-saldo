@@ -1,31 +1,26 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useAppearance } from './Appearance';
 import { MenuRow } from './MenuRow';
 import { Button, Card, IconButton } from './ui';
 import { useUpdates } from './useUpdates';
 type Updates = ReturnType<typeof useUpdates>;
+type Props = { updates: Updates } & (
+  { settings: true; onOpenSettings?: never } | { settings?: false; onOpenSettings: () => void }
+);
 
-export function UpdateCard({
-  updates,
-  settings = false,
-  onOpenSettings,
-}: {
-  updates: Updates;
-  settings?: boolean;
-  onOpenSettings?: () => void;
-}) {
+export function UpdateCard({ updates, settings, onOpenSettings }: Props) {
   const { palette, s } = useAppearance();
   const [showNotes, setShowNotes] = useState(false);
   if (!settings && (!updates.release || updates.dismissed)) return null;
-  if (!settings && updates.release && onOpenSettings)
+  if (!settings)
     return (
       <Card style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ flex: 1 }}>
           <MenuRow
             icon="refresh-outline"
             title="Atualização disponível"
-            subtitle={`Versão ${updates.release.versionName}`}
+            subtitle={`Versão ${updates.release!.versionName}`}
             onPress={onOpenSettings}
           />
         </View>
@@ -76,25 +71,27 @@ export function UpdateCard({
         <>
           {updates.release && (
             <Button
-              title={updates.ready ? 'Instalar atualização' : 'Baixar e atualizar'}
+              title={
+                updates.installing
+                  ? 'Abrindo instalador…'
+                  : updates.ready
+                    ? 'Instalar atualização'
+                    : 'Baixar e atualizar'
+              }
               onPress={() => void updates.update()}
-              disabled={updates.checking}
+              disabled={updates.checking || updates.installing}
             />
           )}
-          {settings ? (
-            <Button
-              secondary
-              title={updates.checking ? 'Verificando…' : 'Verificar atualizações'}
-              onPress={() => void updates.check(true)}
-              disabled={updates.checking}
-            />
-          ) : (
-            <Button secondary title="Agora não" onPress={updates.dismiss} />
-          )}
+          <Button
+            secondary
+            title={updates.checking ? 'Verificando…' : 'Verificar atualizações'}
+            onPress={() => void updates.check(true)}
+            disabled={updates.checking || updates.installing}
+          />
         </>
       )}
       {!!updates.message && <Text style={s.muted}>{updates.message}</Text>}
-      {settings && <Text style={s.muted}>O aplicativo continua funcionando sem conexão.</Text>}
+      <Text style={s.muted}>O aplicativo continua funcionando sem conexão.</Text>
     </Card>
   );
 }

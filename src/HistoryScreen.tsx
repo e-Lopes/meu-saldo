@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { ScrollView, SectionList, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { SectionList, Text, View } from 'react-native';
 import { LedgerRow } from './LedgerRow';
 import { dateLabel, Entry, Kind, Ledger, monthEntries, searchText, totals } from './finance';
 import { useAppearance } from './Appearance';
@@ -126,11 +126,7 @@ export function HistoryScreen({
                     { value: 'DESPESA', label: 'Despesas' },
                   ]}
                 />
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
-                >
+                <View style={[s.wrap, { gap: 8 }]}>
                   <Chip selected={!category} onPress={() => onCategory(null)}>
                     Todas as categorias
                   </Chip>
@@ -140,7 +136,7 @@ export function HistoryScreen({
                       {c.archived ? ' (arquivada)' : ''}
                     </Chip>
                   ))}
-                </ScrollView>
+                </View>
               </>
             )}
             {!expanded && (kind || category) && (

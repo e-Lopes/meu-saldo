@@ -1,3 +1,5 @@
+import { categoryIconOptions, isCategoryIcon } from './categoryIcons';
+
 export type Kind = 'RECEITA' | 'DESPESA';
 export type Category = { id: string; name: string; color: number; icon: string; archived: boolean };
 export type Entry = {
@@ -9,7 +11,7 @@ export type Entry = {
   description: string;
 };
 export type Ledger = { version: 1; categories: Category[]; entries: Entry[] };
-export const icons = ['🍴', '🚗', '🏠', '🎬', '●', '💼', '🛒', '❤'];
+export const icons = categoryIconOptions.map((option) => option.value);
 export const colors = [
   0xffed8857, 0xfff1c761, 0xff53aaa5, 0xff9365b5, 0xff6288b0, 0xffd96175, 0xff537568,
 ];
@@ -107,7 +109,7 @@ export function decode(text: string): Ledger {
         c.color >= 0 &&
         c.color <= 0xffffffff &&
         typeof c.icon === 'string' &&
-        icons.includes(c.icon) &&
+        isCategoryIcon(c.icon) &&
         (c.archived === undefined || typeof c.archived === 'boolean'),
       'Categoria inválida.',
     );

@@ -2,13 +2,13 @@
   "expo": {
     "name": "Meu Saldo",
     "slug": "meu-saldo",
-    "version": "1.5.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "platforms": ["android"],
     "android": {
       "package": "br.com.meusaldo",
-      "versionCode": 7,
+      "versionCode": 8,
       "allowBackup": false,
       "permissions": ["android.permission.INTERNET", "android.permission.REQUEST_INSTALL_PACKAGES"],
       "blockedPermissions": [

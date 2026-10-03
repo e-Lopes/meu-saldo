@@ -41,6 +41,8 @@ O script envia quatro secrets criptografados: `MEUSALDO_KEYSTORE_BASE64`, `MEUSA
 
 ## Preparar uma versão
 
+Em 03/10/2026, a próxima entrega recebeu a versão pública `1.0.0`, sucedendo a `1.5.0`, por decisão do responsável pelo projeto. O `versionCode` aumenta de 7 para 8, preservando a ordem de atualização no Android. Foi uma alteração excepcional nos arquivos de configuração; o comando abaixo continua exigindo uma versão pública maior que a atual. As notas da 1.5.0 estão em `release/history/1.5.0.md`. A numeração reiniciada não autoriza reutilizar tags ou sobrescrever releases existentes; confira os números já publicados ao escolher as próximas versões.
+
 Na raiz do projeto:
 
 ```powershell

@@ -1,162 +1,62 @@
 # Meu Saldo
 
-Aplicação Android em **Expo, React Native e TypeScript**, gratuita e com dados locais. Este repositório é uma aplicação independente: pode ser clonado sem workspace ou projeto externo.
+Organize suas finanças e acompanhe para onde vai o seu dinheiro. O Meu Saldo é um aplicativo gratuito para Android que reúne receitas, despesas e saldo mensal em um só lugar.
 
-## Estado atual
+**Funciona sem internet, sem cadastro e sem anúncios.** Seus registros ficam no seu celular.
 
-O aplicativo possui início com saldo mensal, cadastro e edição de receitas/despesas, categorias, histórico com busca e filtros, gráficos, backup manual e atualizador por GitHub Releases.
+[**Baixar para Android**](https://github.com/e-Lopes/meu-saldo/releases/latest/download/meu-saldo.apk) · [Ver versões e novidades](https://github.com/e-Lopes/meu-saldo/releases/latest)
 
-Os Gráficos oferecem gastos por categoria com acesso ao Histórico e evolução dos seis meses com seleção de período. O Menu destaca a privacidade e reúne categorias, atualizações, ajuda e cópia de segurança em opções expansíveis.
+## O que você pode fazer
 
-Temas claro, escuro e do sistema e ocultação de valores ficam salvos localmente. O Histórico usa lista virtualizada, mostra o saldo filtrado e preserva filtros ao editar. Categorias têm busca, contagem de lançamentos e seção de arquivadas. Exclusões podem ser desfeitas por 15 segundos, ampliados conforme a configuração de acessibilidade do Android.
+- **Acompanhar o mês:** veja quanto recebeu, quanto gastou e o saldo restante.
+- **Registrar receitas e despesas:** adicione valores, datas e descrições; edite quando precisar.
+- **Organizar por categorias:** personalize nomes, cores e ícones para identificar seus gastos.
+- **Entender seus hábitos:** consulte os gastos por categoria e compare receitas e despesas dos últimos seis meses.
+- **Encontrar um lançamento:** busque no histórico e filtre por tipo ou categoria.
+- **Personalizar a tela:** escolha o tema claro, escuro ou do celular e oculte os valores quando desejar.
+- **Guardar uma cópia:** salve seus registros em um arquivo para recuperá-los depois ou levar para outro celular.
 
-Novos lançamentos começam no mês visualizado, com data ajustável. O formulário mantém Salvar acessível com o teclado aberto e mostra erros junto ao campo. As abas preservam o mês escolhido e oferecem um atalho ao mês atual.
+O saldo considera as receitas menos as despesas do mês escolhido. Valores de meses anteriores não são somados automaticamente.
 
-A navegação usa tabs de Início/Histórico/Gráficos/Menu e telas modais para lançamentos e categorias. A orientação é fixa em retrato. A imagem `imagem-ilustrativa.jpg` é apenas referência visual.
+## Como instalar
 
-O app instalado funciona offline. Não possui API financeira, autenticação, banco de dados, Google Drive, anúncios ou analytics. A internet é usada somente para verificar versões e baixar APKs.
+Você precisa de um celular com **Android 8 ou superior**. A instalação é feita pelo arquivo do aplicativo, chamado APK, disponível aqui no GitHub.
 
-## Responsabilidade
+1. Toque em [Baixar para Android](https://github.com/e-Lopes/meu-saldo/releases/latest/download/meu-saldo.apk).
+2. Abra o arquivo `meu-saldo.apk` depois de concluir o download.
+3. Se o Android solicitar, autorize a instalação pelo navegador ou aplicativo que abriu o arquivo.
+4. Confirme a instalação e abra o Meu Saldo.
 
-O aplicativo é responsável pela experiência de usuário, navegação, estado local, formulários, acessibilidade, validação e cálculos financeiros. Valores são centavos inteiros; datas são civis, sem conversão para UTC. O saldo é receitas menos despesas do mês, sem transportar saldo anterior.
+Se já usa o aplicativo, instale a nova versão sobre a anterior, **sem desinstalar**. Salve uma cópia dos seus registros antes de atualizar.
 
-O módulo Android local é responsável pela gravação atômica do JSON, seletor de backup e instalação de atualizações verificadas. Nenhum lançamento ou categoria é enviado para serviços remotos.
+## Comece a usar
 
-## Requisitos e instalação
+Toque em **+** para registrar sua primeira receita ou despesa. Escolha a data e, para despesas, uma categoria. Você pode personalizar as categorias pelo **Menu**.
 
-- Node.js 22.13 ou superior na linha 22;
-- npm 10, com `package-lock.json` versionado;
-- JDK 21;
-- Android SDK Platform 36 e Build Tools 36.0.0;
-- aparelho físico com Android 8 ou superior para desenvolvimento e validação manual.
+No **Início**, acompanhe o resumo do mês. No **Histórico**, consulte, edite ou exclua lançamentos. Em **Gráficos**, descubra quais categorias concentram seus gastos e acompanhe a evolução dos últimos meses.
 
-Na raiz deste repositório:
+O botão de olho permite ocultar os valores nas telas de consulta. Ao abrir um lançamento para editar, seu valor fica visível.
 
-```powershell
-npm ci
-```
+## Privacidade e cópias de segurança
 
-Configure `ANDROID_HOME` para o SDK. O Gradle instala o NDK e CMake necessários na primeira compilação. Ferramentas e dependências precisam de internet durante a instalação e o build.
+Seus registros financeiros ficam armazenados no celular e não são enviados para servidores. Não há conexão com contas bancárias nem sincronização automática entre aparelhos. Cada pessoa mantém seus próprios dados.
 
-Dependências, lockfile, TypeScript, entrada Expo e configurações pertencem a este repositório. Não há `.env` obrigatório, workspace npm externo nem conta Expo necessária.
+A internet é usada para verificar e baixar atualizações pelo GitHub. Esses acessos não enviam suas receitas, despesas ou arquivos de cópia.
 
-## Execução
+Para guardar uma cópia, abra **Menu → Cópia de segurança → Salvar uma cópia**. Confira se o arquivo foi salvo e mantenha-o em um lugar seguro: ele contém seus registros e não tem proteção por senha.
 
-Para gerar, compilar e instalar o development build Android:
+**Desinstalar o aplicativo ou limpar seus dados apaga os registros do celular.** Para recuperá-los, você precisará de uma cópia salva anteriormente. Ao restaurar uma cópia, os registros atuais são substituídos após sua confirmação.
 
-```powershell
-npm run android
-```
+## Atualizações e ajuda
 
-Depois de instalado, inicie o Metro para desenvolver as telas:
+Quando houver uma nova versão disponível, o aplicativo mostra um aviso. Você também pode consultar **Menu → Atualizações**. O download precisa de internet; as funções financeiras continuam disponíveis sem conexão.
 
-```powershell
-npm start
-```
+Encontrou um problema ou tem uma sugestão? [Abra uma mensagem no projeto](https://github.com/e-Lopes/meu-saldo/issues). Descreva o que aconteceu e, se possível, informe o modelo do celular e a versão do aplicativo. Evite incluir dados financeiros pessoais.
 
-`index.ts` registra `App.tsx`. Este projeto usa um módulo Android próprio: **Expo Go não executa o aplicativo completo**. Use o development build. A versão de produção empacota o JavaScript no APK e funciona sem Metro ou servidor.
+Você pode compartilhar o [link de download](https://github.com/e-Lopes/meu-saldo/releases/latest/download/meu-saldo.apk) com amigos e familiares. Compartilhar o aplicativo não compartilha seus registros.
 
-O development build usa assinatura debug e não substitui o APK de produção. Para validar atualização preservando dados, use builds release com a chave original.
+## Sobre o projeto
 
-## Comandos
+O Meu Saldo foi pensado para o acompanhamento das finanças pessoais e familiares, com registro manual e uso no próprio celular.
 
-| Comando | Finalidade |
-| --- | --- |
-| `npm ci` | Instala as dependências do lockfile. |
-| `npm start` | Inicia o Metro para o development build. |
-| `npm run android` | Gera, compila e instala o app Android de desenvolvimento. |
-| `npm run prebuild` | Gera o projeto Android a partir da configuração Expo. |
-| `npm run typecheck` | Verifica TypeScript. |
-| `npm run validate` | Verifica tipos e formatação. |
-| `npm run release:prepare -- X.Y.Z` | Alinha versões, incrementa versionCode e prepara notas. |
-| `python scripts/test_release_tools.py` | Confere os scripts de release sem rede ou compilação Android. |
-| `npm run format` | Formata o código TypeScript e as configurações do Expo. |
-| `npm start -- --clear` | Inicia o Metro limpando o cache. |
-
-Não há suíte de testes da aplicação. Há verificações isoladas dos scripts de release, usando arquivos temporários. A validação das telas e do uso no aparelho continua manual, conforme solicitado. Não há destinos web ou iOS configurados.
-
-## Estrutura
-
-```text
-App.tsx                            navegação e composição das telas
-index.ts                           entrada Expo
-src/
-  Appearance.tsx                   temas e preferências locais
-  theme/                           paletas e tokens de design
-  HomeScreen.tsx                   saldo e métricas do mês
-  UpdateCard.tsx                   apresentação de atualizações
-  BottomNavigation.tsx             abas e botão adicionar
-  LedgerRow.tsx                    linha adaptável do Histórico
-  useBackup.ts                     exportação, prévia e restauração
-  ui.tsx                           componentes reutilizáveis
-  HistoryScreen.tsx                histórico virtualizado e filtros
-  EntryForm.tsx                    formulário e calendário
-  CategoryScreen.tsx               gerenciamento de categorias
-  Charts.tsx                       gráficos e valores em texto
-  MenuScreen.tsx                   privacidade, opções e ajuda
-  finance.ts                       tipos, validação e cálculos locais
-  useLedger.ts                     fila de alterações e estado salvo
-  useUpdates.ts                    estado e fluxo de atualização
-  native.ts                        contrato com o módulo Android
-modules/meu-saldo-native/           AtomicFile, backup e atualizador
-plugins/withMeuSaldo.js             privacidade, ícone e assinatura
-app.json                           versão, identificador e plugins
-scripts/                           assinatura e preparação de releases
-.github/workflows/release.yml       build e publicação no GitHub
-docs/                              migração e guia de releases
-```
-
-`android/` é gerada pelo Expo e ignorada pelo Git. Personalizações devem ficar em `app.json`, no plugin e no módulo local. Para inspeção nativa, abra `android/` no Android Studio.
-
-## Armazenamento e privacidade
-
-Categorias e lançamentos ficam em `files/saldo.json`, no armazenamento privado do aplicativo, com formato versionado e limite de 10 MB. O Android AtomicFile preserva o arquivo anterior em caso de gravação interrompida. A interface publica alterações somente depois de salvar. Arquivos inválidos não são substituídos automaticamente.
-
-Backup automático e transferência automática do Android estão desativados. **Desinstalar ou limpar os dados apaga os registros.** Exporte backups regularmente pelo Menu.
-
-O backup JSON não é criptografado: quem tiver acesso ao arquivo poderá ler os registros. A restauração valida o arquivo, mostra um resumo e exige confirmação antes de substituir os dados.
-
-Tema, ocultação de valores e data da última exportação ficam em `SharedPreferences/app_preferences`, separados de `saldo.json` e do backup financeiro. A data é registrada depois de concluir a escrita; cancelamentos e falhas não registram sucesso. Ela não comprova que o arquivo ainda exista. Após 14 dias sem exportação, o Menu mostra um lembrete discreto se houver lançamentos.
-
-Ocultar valores mascara quantias e percentuais nas três telas financeiras, inclusive nos rótulos de acessibilidade, e esconde os desenhos dos gráficos. Abrir um lançamento para editar revela seu valor no formulário. A ocultação protege a visualização cotidiana; não criptografa o arquivo ou o backup.
-
-O GitHub recebe os dados normais das requisições de atualização, como IP e versão do app. Nenhum registro financeiro ou backup é enviado.
-
-## APK, distribuição e atualizações
-
-Baixe o [APK mais recente](https://github.com/e-Lopes/meu-saldo/releases/latest/download/meu-saldo.apk) ou acesse [GitHub Releases](https://github.com/e-Lopes/meu-saldo/releases/latest). Compartilhe o APK ou o link com amigos e familiares. Cada celular mantém seus próprios registros.
-
-**Instale sobre a versão anterior, sem desinstalar.** A versão Expo 1.3 mantém `br.com.meusaldo`, a assinatura original, `files/saldo.json` e o formato JSON 1. Não é necessário exportar/importar para migrar. Faça um backup manual antes de atualizar.
-
-A partir da versão 1.2, o aplicativo verifica versões ao abrir, no máximo a cada 6 horas, e permite verificar imediatamente pelo Menu. O usuário solicita o download e confirma a instalação no Android. Versões 1.0 e 1.1 precisam instalar um APK atual manualmente uma vez.
-
-O atualizador verifica tamanho, SHA-256, identificador, versão e assinatura. Downloads ficam em `cache/updates`, separados dos dados financeiros. Uma falha de rede não bloqueia o uso offline. Não usamos EAS Build ou EAS Update; a publicação ocorre pelo GitHub Actions, sem serviço pago obrigatório.
-
-Para compilar um release local, mantenha a chave original e `keystore.properties` na raiz:
-
-```powershell
-npx expo prebuild --platform android --no-install
-.\android\gradlew.bat -p android assembleRelease '-PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86_64'
-```
-
-APK: `android/app/build/outputs/apk/release/app-release.apk`. O plugin recusa um build release sem a configuração da assinatura.
-
-Guarde uma cópia segura de `.tools/meu-saldo-release.jks` e `keystore.properties` fora do Git. Não crie outra chave para atualizar instalações existentes.
-
-O fluxo padrão é **Gerar candidato Android → conferir o APK no celular → Publicar candidato Android**, informando o ID da execução conferida. A publicação reutiliza o mesmo APK, manifesto e notas, sem recompilar. Não há publicação automática por tag. Prepare as versões com `npm run release:prepare -- X.Y.Z` e descreva as mudanças em `release/notes.md`.
-
-Consulte [Releases e atualizações](docs/releases.md) e [Migração para Expo](docs/expo-migration.md). O código Kotlin/Compose anterior permanece no histórico do Git.
-
-As recomendações priorizadas de evolução e a validação manual desta UI estão em [next_steps.md](next_steps.md).
-
-## Troubleshooting
-
-- Dependências ausentes: execute `npm ci` na raiz.
-- Cache do Metro: execute `npm start -- --clear`.
-- Módulo `MeuSaldoNative` ausente: use o development build; após mudar código nativo ou plugins, gere e compile novamente com `npm run android`.
-- SDK não encontrado: configure `ANDROID_HOME` ou `android/local.properties` com `sdk.dir=C:/caminho/Android/Sdk`.
-- Windows e erro `Filename longer than 260 characters`: clone em um caminho curto, como `C:/dev/meu-saldo`, e use uma pasta curta para `GRADLE_USER_HOME`. O build de produção no GitHub Actions usa Linux.
-- Assinatura incompatível: use a chave original e um APK release. Não desinstale o app para resolver se quiser manter os registros.
-- Sem conexão: continue usando os recursos financeiros; verifique atualizações mais tarde.
-
-Referências: [Expo development builds](https://docs.expo.dev/develop/development-builds/introduction/), [geração nativa](https://docs.expo.dev/workflow/continuous-native-generation/), [Expo Modules](https://docs.expo.dev/modules/overview/), [Android AtomicFile](https://developer.android.com/reference/android/util/AtomicFile).
+Para contribuir com o código ou conhecer os detalhes técnicos, consulte a [documentação de desenvolvimento](docs/desenvolvimento.md).

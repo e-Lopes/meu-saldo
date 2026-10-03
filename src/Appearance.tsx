@@ -1,12 +1,4 @@
-import React, {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, useColorScheme, View } from 'react-native';
 import Native from './native';
 import { money as formatMoney } from './finance';
@@ -14,7 +6,6 @@ import { errorMessage } from './useLedger';
 
 import { lightColors, darkColors, Colors } from './theme/palettes';
 import { spacing, radius, controlSize, typography } from './theme/tokens';
-export { lightColors, darkColors };
 export type { Colors };
 export const createStyles = (p: Colors) =>
   StyleSheet.create({
@@ -59,6 +50,7 @@ export const createStyles = (p: Colors) =>
       textAlign: 'center',
     },
     chip: {
+      maxWidth: '100%',
       borderRadius: radius.control,
       borderWidth: 1,
       borderColor: p.border,

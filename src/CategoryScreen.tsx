@@ -14,6 +14,7 @@ import { Category, categoryColor, colors, icons, id, Ledger, searchText } from '
 import { Button, CategoryIcon, Chip, Field, IconButton } from './ui';
 import { MenuRow } from './MenuRow';
 import { errorMessage } from './useLedger';
+import { categoryIconOptions, isCategoryEmoji } from './categoryIcons';
 
 export function CategoryScreen({
   ledger,
@@ -29,6 +30,7 @@ export function CategoryScreen({
   const [name, setName] = useState('');
   const [color, setColor] = useState(colors[0]);
   const [icon, setIcon] = useState(icons[0]);
+  const [emoji, setEmoji] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -38,7 +40,8 @@ export function CategoryScreen({
   const changed =
     name !== (editing?.name ?? '') ||
     color !== (editing?.color ?? colors[0]) ||
-    icon !== (editing?.icon ?? icons[0]);
+    icon !== (editing?.icon ?? icons[0]) ||
+    emoji !== (editing?.icon.startsWith('emoji:') ? editing.icon.slice(6) : '');
   const counts = new Map<string, number>();
   for (const entry of ledger.entries)
     if (entry.categoryId) counts.set(entry.categoryId, (counts.get(entry.categoryId) ?? 0) + 1);
@@ -53,6 +56,7 @@ export function CategoryScreen({
     setName(c?.name ?? '');
     setColor(c?.color ?? colors[0]);
     setIcon(c?.icon ?? icons[0]);
+    setEmoji(c?.icon.startsWith('emoji:') ? c.icon.slice(6) : '');
     setError('');
     setCustomize(false);
     setOptions(false);
@@ -61,12 +65,14 @@ export function CategoryScreen({
     if (busy) return;
     try {
       if (!name.trim()) throw new Error('Informe o nome da categoria.');
+      if (icon.startsWith('emoji:') && !isCategoryEmoji(emoji.trim()))
+        throw new Error('Escolha um único emoji para a categoria.');
       setBusy(true);
       const category = {
         id: editing?.id ?? id(),
         name: name.trim(),
         color,
-        icon,
+        icon: icon.startsWith('emoji:') ? `emoji:${emoji.trim()}` : icon,
         archived: editing?.archived ?? false,
       };
       await mutate((l) => ({
@@ -269,10 +275,10 @@ export function CategoryScreen({
                     </View>
                     <Text style={s.label}>Ícone</Text>
                     <View style={s.wrap}>
-                      {icons.map((v) => (
+                      {categoryIconOptions.map(({ value: v, label }) => (
                         <Chip
                           key={v}
-                          label={`Ícone ${['Alimentação', 'Transporte', 'Casa', 'Lazer', 'Outros', 'Trabalho', 'Compras', 'Saúde'][icons.indexOf(v)] ?? v}`}
+                          label={`Ícone ${label}`}
                           disabled={busy}
                           selected={icon === v}
                           onPress={() => setIcon(v)}
@@ -281,6 +287,36 @@ export function CategoryScreen({
                         </Chip>
                       ))}
                     </View>
+                    <Field
+                      label="Usar emoji"
+                      helper="Cole um emoji ou escolha no teclado, como 🐶, 🍕 ou ✈️."
+                      placeholder="Seu emoji"
+                      value={emoji}
+                      editable={!busy}
+                      maxLength={32}
+                      autoCorrect={false}
+                      onChangeText={(value) => {
+                        setEmoji(value);
+                        setIcon(value ? `emoji:${value.trim()}` : icons[0]);
+                        setError('');
+                      }}
+                      error={
+                        emoji && !isCategoryEmoji(emoji.trim())
+                          ? 'Informe um único emoji.'
+                          : undefined
+                      }
+                    />
+                    {isCategoryEmoji(emoji.trim()) && (
+                      <Chip
+                        label={`Usar emoji ${emoji.trim()}`}
+                        selected={icon.startsWith('emoji:')}
+                        disabled={busy}
+                        onPress={() => setIcon(`emoji:${emoji.trim()}`)}
+                      >
+                        <CategoryIcon category={{ icon: `emoji:${emoji.trim()}`, color }} />
+                        Usar este emoji
+                      </Chip>
+                    )}
                   </>
                 )}
                 {!!error && (

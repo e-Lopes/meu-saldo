@@ -1,5 +1,5 @@
 import { AppearanceProvider, useAppearance } from './src/Appearance';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,

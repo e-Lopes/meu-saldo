@@ -12,7 +12,6 @@ export const lightColors = {
   hero: '#17304F',
   heroText: '#FFFFFF',
   heroMuted: '#C6D8E8',
-  header: '#D6EFEB',
   track: '#EDF1F4',
 };
 export type Colors = typeof lightColors;
@@ -30,6 +29,5 @@ export const darkColors: Colors = {
   hero: '#1D3C4E',
   heroText: '#FFFFFF',
   heroMuted: '#C6D8E8',
-  header: '#193C3E',
   track: '#34495D',
 };

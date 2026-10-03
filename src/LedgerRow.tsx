@@ -1,4 +1,3 @@
-import React from 'react';
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Category, Entry } from './finance';
