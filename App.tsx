@@ -22,6 +22,7 @@ import { Charts } from './src/Charts';
 import { HistoryScreen } from './src/HistoryScreen';
 import { MenuScreen } from './src/MenuScreen';
 import { EntryForm } from './src/EntryForm';
+import { SaveNotice } from './src/SaveNotice';
 import { Entry, Kind, Ledger, shiftMonth, today } from './src/finance';
 import { Button, IconButton, MonthSelector } from './src/ui';
 import { errorMessage, useLedger } from './src/useLedger';
@@ -42,6 +43,7 @@ function Main() {
   const [tab, setTab] = useState<Tab>('home');
   const [month, setMonth] = useState(today().slice(0, 7));
   const [entry, setEntry] = useState<Entry | null | undefined>();
+  const [savedEvent, setSavedEvent] = useState(0);
   const [categories, setCategories] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -191,7 +193,7 @@ function Main() {
         />
       ) : (
         <ScrollView key={tab} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-          {store.loading && <ActivityIndicator size="large" color={palette.teal} />}
+          {store.loading && <ActivityIndicator size="large" color={palette.accent} />}
           {!!store.error && (
             <View style={s.card}>
               <Text style={s.heading}>Registros indisponíveis</Text>
@@ -278,6 +280,7 @@ function Main() {
           </Pressable>
         </View>
       )}
+      <SaveNotice event={savedEvent} message="Lançamento salvo." show={entry === undefined} />
       <BottomNavigation
         tab={tab}
         onSelect={chooseTab}
@@ -290,14 +293,15 @@ function Main() {
           ledger={ledger}
           month={month}
           onClose={() => setEntry(undefined)}
-          onSave={(value) =>
-            store.mutate((l) => ({
+          onSave={async (value) => {
+            await store.mutate((l) => ({
               ...l,
               entries: l.entries.some((e) => e.id === value.id)
                 ? l.entries.map((e) => (e.id === value.id ? value : e))
                 : [...l.entries, value],
-            }))
-          }
+            }));
+            setSavedEvent((event) => event + 1);
+          }}
           onDelete={deleteEntry}
         />
       )}

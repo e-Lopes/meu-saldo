@@ -46,10 +46,13 @@ export function LedgerRow({
       )}
       <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
         <Text style={[s.text, { fontWeight: '600' }]}>{title}</Text>
-        <Text style={s.muted}>
-          {category?.name || 'Receita'}
-          {category?.archived ? ' · arquivada' : ''}
-        </Text>
+        {!!entry.description && (
+          <Text style={s.muted}>
+            {category?.name || 'Receita'}
+            {category?.archived ? ' · arquivada' : ''}
+          </Text>
+        )}
+        {!entry.description && category?.archived && <Text style={s.muted}>Arquivada</Text>}
         {stacked && amount}
       </View>
       {!stacked && <View style={{ maxWidth: '45%', alignItems: 'flex-end' }}>{amount}</View>}

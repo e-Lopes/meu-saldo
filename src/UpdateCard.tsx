@@ -45,7 +45,7 @@ export function UpdateCard({ updates, settings, onOpenSettings }: Props) {
           )}
         </>
       )}
-      {updates.checking && <ActivityIndicator color={palette.teal} />}
+      {updates.checking && <ActivityIndicator color={palette.accent} />}
       {updates.downloading ? (
         <>
           <View
@@ -60,7 +60,7 @@ export function UpdateCard({ updates, settings, onOpenSettings }: Props) {
               style={{
                 height: 8,
                 width: `${Math.round(updates.progress * 100)}%`,
-                backgroundColor: palette.teal,
+                backgroundColor: palette.accent,
               }}
             />
           </View>

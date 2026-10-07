@@ -1,6 +1,6 @@
 {
   "name": "meu-saldo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "main": "index.ts",
   "scripts": {
@@ -12,6 +12,7 @@
     "release:prepare": "node scripts/bump_release.cjs",
     "format:check": "prettier --check App.tsx index.ts src plugins app.json package.json tsconfig.json scripts/*.cjs",
     "validate": "npm run typecheck && npm run format:check",
+    "test": "node --test scripts/test_finance.cjs",
     "release:check": "python scripts/test_release_tools.py"
   },
   "dependencies": {

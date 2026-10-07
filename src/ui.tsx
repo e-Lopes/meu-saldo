@@ -64,16 +64,12 @@ export function SegmentedControl<T extends string>({
   onChange,
   label,
   disabled = false,
-  selectedBackground,
-  selectedForeground,
 }: {
   options: ReadonlyArray<{ value: T; label: string }>;
   value: T;
   onChange: (value: T) => void;
   label: string;
   disabled?: boolean;
-  selectedBackground?: string;
-  selectedForeground?: string;
 }) {
   const { palette, s } = useAppearance();
   const { width, fontScale } = useWindowDimensions();
@@ -103,8 +99,7 @@ export function SegmentedControl<T extends string>({
             justifyContent: 'center',
             padding: spacing.sm,
             borderRadius: radius.control,
-            backgroundColor:
-              value === option.value ? (selectedBackground ?? palette.selected) : 'transparent',
+            backgroundColor: value === option.value ? palette.selected : 'transparent',
             opacity: disabled ? 0.45 : pressed ? 0.65 : 1,
           })}
         >
@@ -113,7 +108,7 @@ export function SegmentedControl<T extends string>({
               s.text,
               {
                 textAlign: 'center',
-                color: value === option.value ? (selectedForeground ?? palette.teal) : palette.navy,
+                color: value === option.value ? palette.accent : palette.navy,
                 fontWeight: value === option.value ? '700' : '400',
               },
             ]}
@@ -235,7 +230,7 @@ export function Chip({
               style={[
                 s.text,
                 { flexShrink: 1 },
-                selected && { color: palette.teal, fontWeight: '600' },
+                selected && { color: palette.accent, fontWeight: '600' },
               ]}
             >
               {child}
@@ -307,6 +302,8 @@ export function Field({
         ref={inputRef}
         accessibilityLabel={label}
         placeholderTextColor={palette.muted}
+        selectionColor={palette.accent}
+        cursorColor={palette.accent}
         {...props}
         style={[s.input, error ? { borderColor: palette.expense } : null, props.style]}
       />
@@ -358,7 +355,7 @@ export function Empty({
   const { palette, s } = useAppearance();
   return (
     <View style={[s.card, { alignItems: 'center', paddingVertical: 30 }]}>
-      <Ionicons name="wallet-outline" color={palette.teal} size={40} />
+      <Ionicons name="wallet-outline" color={palette.accent} size={40} />
       <Text style={[s.heading, { textAlign: 'center' }]}>{title}</Text>
       <Text style={[s.muted, { textAlign: 'center' }]}>{text}</Text>
       {!!actionLabel && onAction && <Button title={actionLabel} onPress={onAction} />}

@@ -15,15 +15,6 @@ import {
 import { CategoryIcon, Empty, SegmentedControl } from './ui';
 
 const percentage = (value: number) => `${value.toFixed(1).replace('.', ',')}%`;
-function useChartAppearance() {
-  const appearance = useAppearance();
-  return {
-    ...appearance,
-    palette: appearance.dark
-      ? { ...appearance.palette, selected: '#263F60', teal: '#A9CCFF' }
-      : appearance.palette,
-  };
-}
 const shortMonth = (value: string) => monthName(value).split(' ')[0].slice(0, 3);
 const axisMoney = (cents: number) => {
   const value = cents / 100;
@@ -44,7 +35,6 @@ export function Charts({
   onCategory: (id: string) => void;
 }) {
   const [view, setView] = useState<'categories' | 'trend'>('categories');
-  const { palette } = useChartAppearance();
   // Reset month-specific selection when navigating to a different reporting period.
   return (
     <>
@@ -52,8 +42,6 @@ export function Charts({
         label="Visualização dos gráficos"
         value={view}
         onChange={setView}
-        selectedBackground={palette.selected}
-        selectedForeground={palette.teal}
         options={[
           { value: 'categories', label: 'Por categoria' },
           { value: 'trend', label: 'Últimos 6 meses' },
@@ -77,7 +65,7 @@ function CategoryChart({
   month: string;
   onCategory: (id: string) => void;
 }) {
-  const { palette, s, money, hidden } = useChartAppearance();
+  const { palette, s, money, hidden } = useAppearance();
   const styles = chartStyles(palette);
   const rows = groups(ledger, month);
   const summary = totals(monthEntries(ledger, month));
@@ -147,7 +135,7 @@ function CategoryChart({
             <Ionicons
               name={details ? 'chevron-up' : 'chevron-down'}
               size={20}
-              color={palette.teal}
+              color={palette.accent}
             />
           </Pressable>
           {details && (
@@ -179,7 +167,7 @@ function CategoryChart({
                       )
                       .join(' ')}
                     fill="none"
-                    stroke={palette.teal}
+                    stroke={palette.accent}
                     strokeWidth={3}
                   />
                   {rows.map((g, i) => (
@@ -188,7 +176,7 @@ function CategoryChart({
                         cx={36 + (plotWidth * (i + 0.5)) / rows.length}
                         cy={145 - g.cumulative * 1.2}
                         r={4}
-                        fill={palette.teal}
+                        fill={palette.accent}
                       />
                       <SvgText
                         x={36 + (plotWidth * (i + 0.5)) / rows.length}
@@ -218,7 +206,7 @@ function CategoryChart({
 }
 
 function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
-  const { palette, s, money, hidden } = useChartAppearance();
+  const { palette, s, money, hidden } = useAppearance();
   const styles = chartStyles(palette);
   const months = Array.from({ length: 6 }, (_, i) => {
     const key = shiftMonth(month, i - 5);
@@ -320,7 +308,7 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
                     {
                       fontSize: 13,
                       textTransform: 'capitalize',
-                      color: selected === m.key ? palette.teal : palette.muted,
+                      color: selected === m.key ? palette.accent : palette.muted,
                     },
                   ]}
                 >
@@ -388,6 +376,10 @@ const chartStyles = (palette: Colors) =>
       alignItems: 'center',
       backgroundColor: palette.background,
     },
-    selectedMonth: { backgroundColor: palette.selected, borderWidth: 1, borderColor: palette.teal },
+    selectedMonth: {
+      backgroundColor: palette.selected,
+      borderWidth: 1,
+      borderColor: palette.accent,
+    },
     monthDetails: { backgroundColor: palette.background, borderRadius: 16, padding: 16, gap: 12 },
   });

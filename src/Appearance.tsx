@@ -36,7 +36,7 @@ export const createStyles = (p: Colors) =>
       minHeight: controlSize.input,
     },
     button: {
-      backgroundColor: p.teal,
+      backgroundColor: p.accent,
       borderRadius: radius.control,
       minHeight: controlSize.touch,
       padding: 13,
@@ -44,7 +44,7 @@ export const createStyles = (p: Colors) =>
       justifyContent: 'center',
     },
     buttonText: {
-      color: p.background === lightColors.background ? '#FFFFFF' : '#102D2A',
+      color: p.onAccent,
       fontSize: 16,
       fontWeight: '600',
       textAlign: 'center',
@@ -60,7 +60,7 @@ export const createStyles = (p: Colors) =>
       minHeight: controlSize.touch,
       justifyContent: 'center',
     },
-    chipSelected: { borderColor: p.teal, backgroundColor: p.selected },
+    chipSelected: { borderColor: p.accent, backgroundColor: p.selected },
     divider: { height: 1, backgroundColor: p.border },
   });
 type Mode = 'system' | 'light' | 'dark';
@@ -129,7 +129,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
         children
       ) : (
         <View style={{ flex: 1, backgroundColor: palette.background, justifyContent: 'center' }}>
-          <ActivityIndicator color={palette.teal} accessibilityLabel="Carregando preferências" />
+          <ActivityIndicator color={palette.accent} accessibilityLabel="Carregando preferências" />
         </View>
       )}
     </AppearanceContext.Provider>

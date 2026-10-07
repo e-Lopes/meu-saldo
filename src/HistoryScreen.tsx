@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { SectionList, Text, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LedgerRow } from './LedgerRow';
 import { dateLabel, Entry, Kind, Ledger, monthEntries, searchText, totals } from './finance';
 import { useAppearance } from './Appearance';
@@ -139,17 +140,31 @@ export function HistoryScreen({
                 </View>
               </>
             )}
-            {!expanded && (kind || category) && (
-              <Text style={s.muted}>
-                {kind === 'RECEITA'
-                  ? 'Receitas'
-                  : kind === 'DESPESA'
-                    ? 'Despesas'
-                    : 'Todos os tipos'}
-                {category
-                  ? ` · ${ledger.categories.find((c) => c.id === category)?.name ?? 'Categoria'}`
-                  : ''}
-              </Text>
+            {!!filterCount && (
+              <View style={s.wrap}>
+                {!!kind && (
+                  <Chip selected label="Remover filtro de tipo" onPress={() => onKind(null)}>
+                    {kind === 'RECEITA' ? 'Receitas' : 'Despesas'}
+                    <Ionicons name="close" size={18} color={palette.accent} />
+                  </Chip>
+                )}
+                {!!category && (
+                  <Chip
+                    selected
+                    label="Remover filtro de categoria"
+                    onPress={() => onCategory(null)}
+                  >
+                    {categoryById.get(category)?.name ?? 'Categoria'}
+                    <Ionicons name="close" size={18} color={palette.accent} />
+                  </Chip>
+                )}
+                {!!search.trim() && (
+                  <Chip selected label="Remover busca" onPress={() => onSearch('')}>
+                    {`Busca: ${search.trim()}`}
+                    <Ionicons name="close" size={18} color={palette.accent} />
+                  </Chip>
+                )}
+              </View>
             )}
           </View>
         }

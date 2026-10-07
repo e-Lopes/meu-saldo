@@ -1,5 +1,6 @@
 import { useAppearance } from './Appearance';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { SaveNotice } from './SaveNotice';
 import {
   Alert,
   Keyboard,
@@ -61,6 +62,8 @@ export function EntryForm({
   const [categoryId, setCategoryId] = useState<string | null>(entry?.categoryId ?? null);
   const [calendar, setCalendar] = useState(false);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [savedEvent, setSavedEvent] = useState(0);
   const [error, setError] = useState('');
   const categories = ledger.categories.filter((c) => !c.archived || c.id === entry?.categoryId);
   const [categoryPicker, setCategoryPicker] = useState(false);
@@ -70,14 +73,32 @@ export function EntryForm({
   const visibleCategories = categories.filter((category) =>
     searchText(category.name).includes(searchText(categorySearch)),
   );
+  const frequentCategories = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of ledger.entries) {
+      if (item.kind === 'DESPESA' && item.categoryId)
+        counts.set(item.categoryId, (counts.get(item.categoryId) ?? 0) + 1);
+    }
+    return ledger.categories
+      .filter((category) => !category.archived && counts.has(category.id))
+      .sort((a, b) => counts.get(b.id)! - counts.get(a.id)!)
+      .slice(0, 3);
+  }, [ledger]);
+  const baseline = useRef({
+    kind: entry?.kind ?? 'DESPESA',
+    amount: entry ? (entry.cents / 100).toFixed(2).replace('.', ',') : '',
+    description: entry?.description ?? '',
+    date: initialDate,
+    categoryId: entry?.categoryId ?? null,
+  });
   const changed =
-    kind !== (entry?.kind ?? 'DESPESA') ||
-    amount !== (entry ? (entry.cents / 100).toFixed(2).replace('.', ',') : '') ||
-    description !== (entry?.description ?? '') ||
-    date !== initialDate ||
-    categoryId !== (entry?.categoryId ?? null);
+    kind !== baseline.current.kind ||
+    amount !== baseline.current.amount ||
+    description !== baseline.current.description ||
+    date !== baseline.current.date ||
+    categoryId !== baseline.current.categoryId;
   function close() {
-    if (saving) return;
+    if (savingRef.current || saving) return;
     if (!changed) onClose();
     else
       Alert.alert('Descartar alterações?', 'As alterações desta tela ainda não foram salvas.', [
@@ -85,8 +106,8 @@ export function EntryForm({
         { text: 'Descartar', style: 'destructive', onPress: onClose },
       ]);
   }
-  async function save() {
-    if (saving) return;
+  async function save(addAnother = false) {
+    if (savingRef.current) return;
     setError('');
     setAmountError('');
     setCategoryError('');
@@ -108,7 +129,9 @@ export function EntryForm({
       );
       return;
     }
+    let readyForNext = false;
     try {
+      savingRef.current = true;
       setSaving(true);
       await onSave({
         id: entry?.id ?? id(),
@@ -118,11 +141,23 @@ export function EntryForm({
         description: description.trim(),
         categoryId: kind === 'DESPESA' ? categoryId : null,
       });
-      onClose();
+      if (addAnother && !entry) {
+        baseline.current = { kind, amount: '', description: '', date, categoryId };
+        setAmount('');
+        setDescription('');
+        setDescriptionOpen(false);
+        setCategoryPicker(false);
+        setCategorySearch('');
+        setSavedEvent((event) => event + 1);
+        readyForNext = true;
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+      } else onClose();
     } catch (e) {
       setError(errorMessage(e));
     } finally {
+      savingRef.current = false;
       setSaving(false);
+      if (readyForNext) requestAnimationFrame(() => amountRef.current?.focus());
     }
   }
   function remove() {
@@ -185,38 +220,40 @@ export function EntryForm({
                 { value: 'RECEITA', label: 'Receita' },
               ]}
             />
-            <View style={[s.row, { alignItems: 'flex-end' }]}>
-              <View style={{ flex: 1 }}>
-                <Field
-                  label="Valor (R$)"
-                  inputRef={amountRef}
-                  error={amountError}
-                  placeholder="0,00"
-                  value={amount}
-                  onChangeText={(value) => {
-                    setAmount(value);
-                    setAmountError('');
-                  }}
-                  keyboardType="decimal-pad"
-                  maxLength={16}
-                  autoFocus={!entry}
-                  selectTextOnFocus
-                  style={{ fontSize: 32, fontWeight: '600' }}
-                  editable={!saving}
-                />
-              </View>
-              {!!amount && (
+            <View>
+              <View style={[s.row, { alignItems: 'flex-end' }]}>
+                <View style={{ flex: 1 }}>
+                  <Field
+                    label="Valor (R$)"
+                    inputRef={amountRef}
+                    error={amountError}
+                    placeholder="0,00"
+                    value={amount}
+                    onChangeText={(value) => {
+                      setAmount(value);
+                      setAmountError('');
+                    }}
+                    keyboardType="decimal-pad"
+                    maxLength={16}
+                    autoFocus={!entry}
+                    selectTextOnFocus={false}
+                    autoCorrect={false}
+                    style={{ fontSize: 32, fontWeight: '600' }}
+                    editable={!saving}
+                  />
+                </View>
                 <IconButton
                   icon="backspace-outline"
                   label="Limpar valor"
-                  disabled={saving}
+                  disabled={saving || !amount}
                   onPress={() => {
                     setAmount('');
                     setAmountError('');
                     amountRef.current?.focus();
                   }}
                 />
-              )}
+              </View>
+              <Text style={[s.muted, { marginTop: spacing.xs }]}>Em reais. Ex.: 25 ou 25,50.</Text>
             </View>
             {kind === 'DESPESA' && (
               <View
@@ -240,6 +277,26 @@ export function EntryForm({
                     setCategoryPicker((value) => !value);
                   }}
                 />
+                {!categoryPicker && frequentCategories.length > 0 && (
+                  <View style={{ gap: spacing.xs }}>
+                    <Text style={s.muted}>Mais usadas</Text>
+                    <View style={s.wrap}>
+                      {frequentCategories.map((category) => (
+                        <Chip
+                          key={category.id}
+                          disabled={saving}
+                          selected={categoryId === category.id}
+                          onPress={() => {
+                            setCategoryId(category.id);
+                            setCategoryError('');
+                          }}
+                        >
+                          <CategoryIcon category={category} size={26} /> {category.name}
+                        </Chip>
+                      ))}
+                    </View>
+                  </View>
+                )}
                 {!!categoryError && (
                   <Text accessibilityRole="alert" style={{ color: palette.expense }}>
                     {categoryError}
@@ -357,13 +414,23 @@ export function EntryForm({
               borderTopWidth: 1,
               borderColor: palette.border,
               backgroundColor: palette.card,
+              gap: spacing.sm,
             }}
           >
+            <SaveNotice event={savedEvent} message="Lançamento salvo. Pode adicionar o próximo." />
             <Button
               title={saving ? 'Salvando…' : 'Salvar'}
               onPress={() => void save()}
               disabled={saving}
             />
+            {!entry && (
+              <Button
+                secondary
+                title="Salvar e adicionar outro"
+                onPress={() => void save(true)}
+                disabled={saving}
+              />
+            )}
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

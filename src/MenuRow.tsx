@@ -37,7 +37,7 @@ export function MenuRow({
         },
       ]}
     >
-      <Ionicons name={icon} size={23} color={highlight ? palette.teal : palette.muted} />
+      <Ionicons name={icon} size={23} color={highlight ? palette.accent : palette.muted} />
       <View style={{ flex: 1, gap: spacing.xs }}>
         <Text style={[s.text, { fontWeight: '600' }]}>{title}</Text>
         {!!subtitle && <Text style={s.muted}>{subtitle}</Text>}

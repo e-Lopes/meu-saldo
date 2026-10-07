@@ -1,5 +1,6 @@
 export const lightColors = {
-  teal: '#247571',
+  accent: '#247571',
+  onAccent: '#FFFFFF',
   navy: '#17304F',
   background: '#F3F6F8',
   muted: '#59697C',
@@ -16,7 +17,8 @@ export const lightColors = {
 };
 export type Colors = typeof lightColors;
 export const darkColors: Colors = {
-  teal: '#82D9CA',
+  accent: '#A9CCFF',
+  onAccent: '#17304F',
   navy: '#EDF3FA',
   background: '#101B28',
   muted: '#AABACA',
@@ -25,8 +27,8 @@ export const darkColors: Colors = {
   income: '#84D9BE',
   card: '#1B2B3D',
   soft: '#23364A',
-  selected: '#244740',
-  hero: '#1D3C4E',
+  selected: '#263F60',
+  hero: '#263F60',
   heroText: '#FFFFFF',
   heroMuted: '#C6D8E8',
   track: '#34495D',

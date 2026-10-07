@@ -40,7 +40,7 @@ def main():
         raise SystemExit(str(error)) from error
     with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
         output.write(f'needed={str(needed).lower()}\n')
-    message = f'v{version}: ' + ('build and publication requested.' if needed else 'already published; no build needed. Prepare a new version for new changes.')
+    message = f'v{version}: ' + ('candidate build requested.' if needed else 'already published; no build needed. Prepare a new version for new changes.')
     print(message)
     with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
         summary.write(message + '\n')

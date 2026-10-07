@@ -22,7 +22,7 @@ export function BottomNavigation({
   onAdd: () => void;
   addDisabled: boolean;
 }) {
-  const { palette, dark } = useAppearance();
+  const { palette } = useAppearance();
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -47,7 +47,7 @@ export function BottomNavigation({
               disabled={addDisabled}
               onPress={onAdd}
               style={({ pressed }) => ({
-                backgroundColor: palette.teal,
+                backgroundColor: palette.accent,
                 borderRadius: radius.card,
                 width: controlSize.add,
                 height: controlSize.add,
@@ -56,7 +56,7 @@ export function BottomNavigation({
                 opacity: addDisabled ? 0.4 : pressed ? 0.65 : 1,
               })}
             >
-              <Ionicons name="add" color={dark ? '#102D2A' : '#FFFFFF'} size={32} />
+              <Ionicons name="add" color={palette.onAccent} size={32} />
             </Pressable>
           </View>
         ) : (
@@ -78,13 +78,13 @@ export function BottomNavigation({
             <Ionicons
               name={tabs[key].icon}
               size={23}
-              color={tab === key ? palette.teal : palette.muted}
+              color={tab === key ? palette.accent : palette.muted}
             />
             <Text
               style={{
                 fontSize: 12,
                 fontWeight: tab === key ? '700' : '400',
-                color: tab === key ? palette.teal : palette.muted,
+                color: tab === key ? palette.accent : palette.muted,
                 textAlign: 'center',
               }}
             >

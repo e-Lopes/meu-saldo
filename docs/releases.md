@@ -59,20 +59,20 @@ npm run release:prepare -- 1.0.1 --dry-run
 
 Execute `npm run validate`, faça commit dos arquivos e envie o código. A versão do exemplo deve ser ajustada para uma versão ainda não publicada.
 
-## Publicação automática
+## Geração automática de candidatos
 
-O envio à `main` de alterações em `app.json`, `release/notes.md`, no workflow de geração ou em `scripts/check_release.py` dispara a automação. A consulta inicial pula versões já publicadas com APK e manifesto completos; drafts, pré-releases incompletas e falhas de consulta não são tratados como versões disponíveis para sobrescrita.
+O envio à `main` de alterações em `app.json`, `release/notes.md`, no workflow de geração ou em `scripts/check_release.py` dispara a geração do candidato, sem publicação. A consulta inicial pula versões já publicadas com APK e manifesto completos; drafts, pré-releases incompletas e falhas de consulta não são tratados como versões disponíveis para sobrescrita.
 
 Para cada entrega:
 
 1. Prepare uma versão ainda não publicada com `npm run release:prepare -- X.Y.Z`.
 2. Complete `release/notes.md`, registrando validações realizadas e pendentes.
 3. Faça commit das mudanças e push para `main`.
-4. Acompanhe o workflow **Gerar candidato Android**. Ele verifica tipos, formatação e scripts, compila em Linux com a assinatura original, arquiva o candidato, verifica novamente o APK e publica os mesmos bytes.
+4. Acompanhe o workflow **Gerar candidato Android**. Ele verifica tipos, formatação, cálculos, backups e scripts, compila em Linux com a assinatura original e arquiva o candidato. Confira no celular e publique pelo workflow **Publicar candidato Android**, conforme o roteiro abaixo.
 
-O script cria a tag no commit compilado e marca a release como `latest`. Isso permite que o atualizador do celular encontre também a numeração reiniciada 1.0.0. Não há recompilação na publicação nem substituição de releases existentes. O `versionCode` precisa superar todas as releases públicas. Um push sem nova versão não atualiza o APK publicado.
+Na publicação, o script cria a tag no commit compilado e marca a release como `latest`. Isso permite que o atualizador do celular encontre também a numeração reiniciada 1.0.0. Não há recompilação na publicação nem substituição de releases existentes. O `versionCode` precisa superar todas as releases públicas. Um push não atualiza o APK publicado.
 
-Também é possível executar **Run workflow** e marcar **Publicar automaticamente depois de compilar e verificar**. Desmarcada, a opção gera somente o candidato. A automação publica após as verificações técnicas; ela não declara que houve teste no celular. O fluxo manual abaixo continua disponível para conferir antes de distribuir.
+Publicação imediata continua disponível exclusivamente em **Run workflow**, marcando **Publicar automaticamente depois de compilar e verificar**. A opção fica desmarcada por padrão. Nesse caso, a automação publica após as verificações técnicas; ela não declara que houve teste no celular.
 
 ## Alternativa manual: gerar candidato → conferir no celular → publicar
 
@@ -93,10 +93,13 @@ As versões antigas 1.0/1.1, anteriores ao atualizador, podem não ter `update.j
 
 ```powershell
 npm run validate
+npm test
 python scripts/test_release_tools.py
 ```
 
-`validate` verifica TypeScript e formatação. Os testes pequenos dos scripts de release usam arquivos temporários e ferramentas simuladas: verificam alinhamento de versões, recusas, assinatura, integridade do candidato e publicação sem alterar bytes. Não instalam o aplicativo, não acessam a rede nem substituem a conferência em aparelho físico.
+`validate` verifica TypeScript e formatação. `npm test` executa cinco testes focados nos módulos TypeScript reais: valores em centavos, datas, backups válidos/inválidos e totais mensais, sem dependências de teste adicionais. Os onze testes dos scripts de release usam arquivos temporários e ferramentas simuladas: verificam alinhamento de versões, recusas, assinatura, integridade do candidato e publicação sem alterar bytes. Não instalam o aplicativo, não acessam a rede nem substituem a conferência em aparelho físico ou os testes do formulário.
+
+O workflow **Validar projeto** executa essas verificações e a conferência de configuração em todos os pushes e PRs, sem assinatura, publicação ou geração de APK. PRs usam apenas permissão de leitura, sem secrets de assinatura. As Actions dos workflows estão fixadas por SHA; o Dependabot propõe atualizações semanais dessas referências. Mudanças propostas devem passar pela validação antes de serem incorporadas.
 
 O GitHub Actions gera Android em Linux usando a configuração Expo, o plugin e o módulo local. `android/` continua gerada e ignorada pelo Git. Não há EAS obrigatório.
 

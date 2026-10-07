@@ -226,7 +226,7 @@ export function CategoryScreen({
                             {(counts.get(c.id) ?? 0) === 1 ? 'lançamento' : 'lançamentos'}
                           </Text>
                         </View>
-                        <Text style={{ color: palette.teal }}>Editar</Text>
+                        <Text style={{ color: palette.accent }}>Editar</Text>
                       </Pressable>
                     </View>
                   </React.Fragment>
