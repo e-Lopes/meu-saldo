@@ -1,8 +1,12 @@
 ﻿# Próximos passos — Meu Saldo
 
-Atualizado em **07/10/2026**, com a versão **1.0.1** (`versionCode` 9) preparada para publicação. O projeto continua Android, gratuito, offline, com dados locais e distribuição por APK assinado.
+Atualizado em **07/10/2026**, após a publicação da versão **1.0.1** (`versionCode` 9). O projeto continua Android, gratuito, offline, com dados locais e distribuição por APK assinado.
 
 ## Entrega concluída
+
+- [Release 1.0.1 publicada e marcada como latest](https://github.com/e-Lopes/meu-saldo/releases/tag/v1.0.1), com as correções de cadastro, tema escuro unificado e melhorias do Histórico.
+- Commit da entrega: `0c99929`. [Validação no GitHub](https://github.com/e-Lopes/meu-saldo/actions/runs/37675355842), [geração do candidato](https://github.com/e-Lopes/meu-saldo/actions/runs/37675355952) e [publicação](https://github.com/e-Lopes/meu-saldo/actions/runs/37676398304) concluídas com sucesso.
+- APK publicado com 28.063.668 bytes; SHA-256 do candidato conferido com o manifesto público e o digest do asset: `59291c6d00ce7f1f3af23ca550037e17a1fbe4f2ddca7dc202086b49a2c99262`. Publicação sem recompilar; assinatura e pacote originais verificados pelo workflow.
 
 - [Release 1.5.0 publicado](https://github.com/e-Lopes/meu-saldo/releases/tag/v1.5.0), com APK e manifesto de atualização disponíveis.
 - [Candidato Android](https://github.com/e-Lopes/meu-saldo/actions/runs/37091615803) compilado em Linux; [publicação](https://github.com/e-Lopes/meu-saldo/actions/runs/37092379142) concluída reutilizando o mesmo APK, sem recompilar. Hash SHA-256 do arquivo publicado conferido com o candidato e o manifesto.
@@ -36,7 +40,7 @@ Atualizado em **07/10/2026**, com a versão **1.0.1** (`versionCode` 9) preparad
 
 Usar dados fictícios para os cenários destrutivos e guardar uma cópia de segurança antes da atualização.
 
-1. Instalar a 1.5.0 sobre a versão anterior, sem desinstalar. Confirmar registros, categorias, tema e preferência de ocultação após abrir e reiniciar o app.
+1. Instalar a 1.0.1 sobre a versão anterior, sem desinstalar. Confirmar registros, categorias, tema e preferência de ocultação após abrir e reiniciar o app.
 2. Cadastrar e editar um lançamento; verificar data no mês escolhido, erros de valor/categoria, teclado e botão Salvar. Confirmar preservação dos filtros ao voltar da edição.
 3. Exportar um backup e restaurá-lo; conferir os dados recuperados. Cancelar seletores e testar arquivo inválido sem alterar os dados existentes. Só uma exportação concluída deve atualizar sua data no Menu.
 4. Excluir e desfazer; confirmar recuperação do identificador, data, valor, descrição e categoria originais. Conferir também o encerramento do prazo da ação.
@@ -61,7 +65,7 @@ Corrigir os problemas encontrados antes de ampliar funcionalidades. Há cinco te
 - Validação em todos os pushes e PRs: TypeScript, formatação, cinco testes financeiros, onze testes de release e configuração. Sem gerar APK ou acessar secrets de assinatura nessa rotina.
 - Push de release gera candidato sem publicar; publicação após conferência pelo workflow de promoção. Publicação imediata disponível somente como opção explícita no disparo manual.
 - Actions fixadas por commits consultados nos repositórios oficiais, com propostas semanais de atualização pelo Dependabot. Credenciais de assinatura criadas apenas após as validações e geração do projeto Android.
-- Verificações locais aprovadas. Publicação da 1.0.1 solicitada pelo usuário; executar a validação no GitHub, gerar candidato e publicar os mesmos bytes. Registrar os resultados após a conclusão. Conferência em aparelho físico pendente.
+- Verificações locais e workflows no GitHub aprovados; versão 1.0.1 publicada a pedido do usuário usando o mesmo candidato. Conferência em aparelho físico pendente.
 
 Fluxo recomendado: **preparar versão → gerar candidato → conferir no celular → publicar o mesmo candidato**. Os comandos, workflows e verificações estão em [docs/releases.md](docs/releases.md). A confirmação de publicação autoriza distribuir; não declara que houve teste em aparelho físico. Registrar sempre as validações realizadas e pendentes nas notas.
 
