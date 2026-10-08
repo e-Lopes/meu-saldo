@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { decode, encode, initialLedger, Ledger } from './finance';
+import { AppState } from 'react-native';
+import { decode, encode, generateOccurrences, initialLedger, Ledger } from './finance';
 import Native from './native';
 export const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Não foi possível concluir a operação.';
@@ -14,19 +15,32 @@ export function useLedger() {
   useEffect(() => {
     mounted.current = true;
     Native.readLedger()
-      .then((text) => {
+      .then(async (text) => {
         const data = text === null ? initialLedger() : decode(text);
         current.current = data;
+        await mutate(
+          generateOccurrences,
+          undefined,
+          text !== null &&
+            (JSON.parse(text).version === 1 ||
+              JSON.parse(text).categories.some(
+                (category: { colorKey?: string }) => !category.colorKey,
+              )),
+        );
         if (mounted.current) {
-          setLedger(data);
+          setLedger(current.current);
           setError(null);
         }
       })
       .catch((e) => {
-        if (mounted.current)
+        if (mounted.current) {
+          if (current.current) setLedger(current.current);
           setError(
-            `Não foi possível abrir os registros. O arquivo foi preservado. ${errorMessage(e)}`,
+            current.current
+              ? `Não foi possível atualizar os registros automáticos. Os registros anteriores foram mantidos. ${errorMessage(e)}`
+              : `Não foi possível abrir os registros. O arquivo foi preservado. ${errorMessage(e)}`,
           );
+        }
       })
       .finally(() => {
         if (mounted.current) setLoading(false);
@@ -35,7 +49,24 @@ export function useLedger() {
       mounted.current = false;
     };
   }, []);
-  function mutate(change: (previous: Ledger) => Ledger, replacement?: Ledger) {
+  useEffect(() => {
+    const refresh = () => {
+      if (!current.current || AppState.currentState !== 'active') return;
+      void mutate(generateOccurrences).catch((e) => {
+        if (mounted.current)
+          setError(`Não foi possível registrar as recorrências. ${errorMessage(e)}`);
+      });
+    };
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh();
+    });
+    const timer = setInterval(refresh, 60_000);
+    return () => {
+      subscription.remove();
+      clearInterval(timer);
+    };
+  }, []);
+  function mutate(change: (previous: Ledger) => Ledger, replacement?: Ledger, forceWrite = false) {
     setPending((n) => n + 1);
     const job = queue.current
       .catch(() => {})
@@ -44,11 +75,13 @@ export function useLedger() {
         if (!replacement && previous === null)
           throw new Error('Restaure um backup para recuperar os registros.');
         const next = replacement ?? change(previous!);
+        if (next === previous && !forceWrite) return;
         const text = encode(next);
         await Native.writeLedger(text);
-        current.current = next;
+        const persisted = decode(text);
+        current.current = persisted;
         if (mounted.current) {
-          setLedger(next);
+          setLedger(persisted);
           setError(null);
         }
       })
@@ -64,6 +97,6 @@ export function useLedger() {
     loading,
     busy: pending > 0,
     mutate,
-    restore: (data: Ledger) => mutate((v) => v, data),
+    restore: (data: Ledger) => mutate((v) => v, generateOccurrences(data)),
   };
 }

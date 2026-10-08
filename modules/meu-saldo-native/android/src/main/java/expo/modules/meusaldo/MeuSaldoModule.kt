@@ -40,19 +40,8 @@ class MeuSaldoModule : Module() {
     Constant("versionName") { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "" }
     AsyncFunction("getPreferences") {
       applyTheme()
-      mapOf("theme" to preferences.getString("theme", "system"), "hidden" to preferences.getBoolean("hidden", false), "lastBackup" to preferences.getLong("lastBackup", 0))
+      mapOf("lastBackup" to preferences.getLong("lastBackup", 0))
     }
-    AsyncFunction("setPreference") { key: String, value: String ->
-      val editor = preferences.edit()
-      when (key) {
-        "theme" -> { require(value in listOf("system", "light", "dark")); editor.putString(key, value) }
-        "hidden" -> { require(value == "true" || value == "false"); editor.putBoolean(key, value == "true") }
-        else -> error("Preferência inválida.")
-      }
-      require(editor.commit()) { "Não foi possível salvar a preferência." }
-      if (key == "theme") applyTheme()
-    }
-
     AsyncFunction("readLedger") {
       synchronized(storageLock) {
         val atomic = ledgerFile()
@@ -148,12 +137,7 @@ class MeuSaldoModule : Module() {
   @Suppress("DEPRECATION")
   private fun applyTheme() {
     val activity = appContext.currentActivity as? AppCompatActivity ?: return
-    val mode = when (preferences.getString("theme", "system")) {
-      "dark" -> AppCompatDelegate.MODE_NIGHT_YES
-      "light" -> AppCompatDelegate.MODE_NIGHT_NO
-      else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-    }
-    activity.runOnUiThread { activity.delegate.localNightMode = mode }
+    activity.runOnUiThread { activity.delegate.localNightMode = AppCompatDelegate.MODE_NIGHT_YES }
   }
 
   @Suppress("DEPRECATION")

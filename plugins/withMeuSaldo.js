@@ -1,6 +1,7 @@
 const {
   withAndroidManifest,
   withAppBuildGradle,
+  withAndroidStyles,
   withDangerousMod,
 } = require('expo/config-plugins');
 const fs = require('node:fs');
@@ -30,14 +31,28 @@ if (saldoPropertiesFile.exists()) {
 }
 `;
 module.exports = function withMeuSaldo(config) {
+  config = withAndroidStyles(config, (c) => {
+    const styles = c.modResults.resources.style;
+    const splash = styles.find((style) => style.$.name === 'Theme.App.SplashScreen');
+    if (splash) {
+      splash.item = (splash.item || []).filter(
+        (item) => item.$.name !== 'android:windowBackground',
+      );
+      splash.item.push({
+        $: { name: 'android:windowBackground' },
+        _: '@drawable/meu_saldo_splash',
+      });
+    }
+    return c;
+  });
   config = withAndroidManifest(config, (c) => {
     const application = c.modResults.manifest.application[0];
     application.$['android:allowBackup'] = 'false';
     application.$['android:fullBackupContent'] = 'false';
     application.$['android:dataExtractionRules'] = '@xml/meu_saldo_data_extraction_rules';
     application.$['android:usesCleartextTraffic'] = 'false';
-    application.$['android:icon'] = '@drawable/meu_saldo_wallet';
-    application.$['android:roundIcon'] = '@drawable/meu_saldo_wallet';
+    application.$['android:icon'] = '@drawable/meu_saldo_app_icon';
+    application.$['android:roundIcon'] = '@drawable/meu_saldo_app_icon';
     return c;
   });
   config = withAppBuildGradle(config, (c) => {
@@ -51,6 +66,24 @@ module.exports = function withMeuSaldo(config) {
       const res = path.join(c.modRequest.platformProjectRoot, 'app/src/main/res');
       fs.mkdirSync(path.join(res, 'xml'), { recursive: true });
       fs.mkdirSync(path.join(res, 'drawable'), { recursive: true });
+      fs.mkdirSync(path.join(res, 'drawable-nodpi'), { recursive: true });
+      fs.copyFileSync(
+        path.join(c.modRequest.projectRoot, 'assets/icon.png'),
+        path.join(res, 'drawable-nodpi/meu_saldo_app_icon.png'),
+      );
+      fs.mkdirSync(path.join(res, 'values-v31'), { recursive: true });
+      fs.writeFileSync(
+        path.join(res, 'drawable/meu_saldo_splash.xml'),
+        '<layer-list xmlns:android="http://schemas.android.com/apk/res/android"><item android:drawable="@color/meu_saldo_splash_background"/><item android:width="96dp" android:height="96dp" android:gravity="center" android:drawable="@drawable/meu_saldo_app_icon"/></layer-list>',
+      );
+      fs.writeFileSync(
+        path.join(res, 'values/meu_saldo_splash.xml'),
+        '<resources><color name="meu_saldo_splash_background">#0D1B2A</color></resources>',
+      );
+      fs.writeFileSync(
+        path.join(res, 'values-v31/meu_saldo_splash.xml'),
+        '<resources><style name="Theme.App.SplashScreen" parent="AppTheme"><item name="android:windowSplashScreenBackground">@color/meu_saldo_splash_background</item><item name="android:windowSplashScreenAnimatedIcon">@drawable/meu_saldo_app_icon</item><item name="android:windowSplashScreenIconBackgroundColor">@color/meu_saldo_splash_background</item><item name="android:windowBackground">@drawable/meu_saldo_splash</item></style></resources>',
+      );
       fs.writeFileSync(
         path.join(res, 'xml/meu_saldo_data_extraction_rules.xml'),
         '<data-extraction-rules>' +
@@ -69,10 +102,6 @@ module.exports = function withMeuSaldo(config) {
             )
             .join('') +
           '</data-extraction-rules>',
-      );
-      fs.writeFileSync(
-        path.join(res, 'drawable/meu_saldo_wallet.xml'),
-        '<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48"><path android:fillColor="#17304F" android:pathData="M0,0h48v48h-48z"/><path android:fillColor="#53AAA5" android:pathData="M8,12h30v24h-30z"/><path android:fillColor="#FFFFFF" android:pathData="M28,20h13v9h-13z"/><path android:fillColor="#17304F" android:pathData="M31,23h3v3h-3z"/></vector>',
       );
       return c;
     },

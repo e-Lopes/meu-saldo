@@ -1,18 +1,18 @@
 import { useAppearance, Colors } from './Appearance';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import Svg, { Circle, G, Line, Polyline, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, G, Line, Rect, Text as SvgText } from 'react-native-svg';
 import {
   categoryColor,
   groups,
+  Kind,
   Ledger,
   monthEntries,
   monthName,
   shiftMonth,
   totals,
 } from './finance';
-import { CategoryIcon, Empty, SegmentedControl } from './ui';
+import { Empty, SegmentedControl } from './ui';
 
 const percentage = (value: number) => `${value.toFixed(1).replace('.', ',')}%`;
 const shortMonth = (value: string) => monthName(value).split(' ')[0].slice(0, 3);
@@ -29,29 +29,36 @@ export function Charts({
   ledger,
   month,
   onCategory,
+  initialKind = 'DESPESA',
 }: {
   ledger: Ledger;
   month: string;
-  onCategory: (id: string) => void;
+  onCategory: (id: string, kind?: Kind) => void;
+  initialKind?: Kind;
 }) {
-  const [view, setView] = useState<'categories' | 'trend'>('categories');
+  const [kind, setKind] = useState<Kind>(initialKind);
   // Reset month-specific selection when navigating to a different reporting period.
   return (
     <>
-      <SegmentedControl
-        label="Visualização dos gráficos"
-        value={view}
-        onChange={setView}
-        options={[
-          { value: 'categories', label: 'Por categoria' },
-          { value: 'trend', label: 'Últimos 6 meses' },
-        ]}
-      />
-      {view === 'categories' ? (
-        <CategoryChart key={month} ledger={ledger} month={month} onCategory={onCategory} />
-      ) : (
+      <>
+        <SegmentedControl
+          label="Tipo de categoria"
+          value={kind}
+          onChange={setKind}
+          options={[
+            { value: 'DESPESA', label: 'Despesas' },
+            { value: 'RECEITA', label: 'Receitas' },
+          ]}
+        />
+        <CategoryChart
+          key={`${month}/${kind}`}
+          ledger={ledger}
+          month={month}
+          kind={kind}
+          onCategory={onCategory}
+        />
         <MonthlyChart key={month} ledger={ledger} month={month} />
-      )}
+      </>
     </>
   );
 }
@@ -60,153 +67,143 @@ function CategoryChart({
   ledger,
   month,
   onCategory,
+  kind,
 }: {
   ledger: Ledger;
   month: string;
-  onCategory: (id: string) => void;
+  onCategory: (id: string, kind?: Kind) => void;
+  kind: Kind;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s, money, dark } = useAppearance();
   const styles = chartStyles(palette);
-  const rows = groups(ledger, month);
+  const rows = groups(ledger, month, kind);
   const summary = totals(monthEntries(ledger, month));
-  const [details, setDetails] = useState(false);
-  const [width, setWidth] = useState(260);
-  const plotWidth = Math.max(80, width - 48);
   return (
     <>
       <View style={styles.summary}>
-        <Text style={s.muted}>Despesas do mês</Text>
-        <Text style={styles.amount}>{money(summary.expense)}</Text>
-        {rows[0] ? (
-          <Text style={s.text}>
-            <Text style={{ fontWeight: '700' }}>{rows[0].category.name}</Text> concentra{' '}
-            {hidden ? '••••' : percentage(rows[0].percentage)} dos seus gastos.
+        <Text style={s.heading}>Por categoria</Text>
+        {rows.length > 0 && (
+          <View
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel={`Distribuição por categoria. Total de ${kind === 'DESPESA' ? 'despesas' : 'receitas'}: ${money(kind === 'DESPESA' ? summary.expense : summary.income)}.`}
+            style={{ alignItems: 'center' }}
+          >
+            <Svg width={220} height={220} accessible={false}>
+              <Circle
+                cx={110}
+                cy={110}
+                r={78}
+                stroke={palette.track}
+                strokeWidth={30}
+                fill="none"
+              />
+              {rows.map((group, index) => {
+                const circumference = 2 * Math.PI * 78;
+                const offset = rows.slice(0, index).reduce((sum, row) => sum + row.percentage, 0);
+                return (
+                  <Circle
+                    key={group.category.id || 'uncategorized'}
+                    cx={110}
+                    cy={110}
+                    r={78}
+                    fill="none"
+                    stroke={categoryColor(group.category, dark)}
+                    strokeWidth={30}
+                    strokeDasharray={`${(circumference * group.percentage) / 100} ${circumference}`}
+                    strokeDashoffset={(-circumference * offset) / 100}
+                    rotation={-90}
+                    origin="110,110"
+                  />
+                );
+              })}
+              <SvgText x={110} y={99} textAnchor="middle" fill={palette.muted} fontSize={13}>
+                Total
+              </SvgText>
+              <SvgText
+                x={110}
+                y={123}
+                textAnchor="middle"
+                fill={palette.navy}
+                fontSize={17}
+                fontWeight="700"
+              >
+                {kind === 'DESPESA' ? '−' : '+'}{' '}
+                {money(kind === 'DESPESA' ? summary.expense : summary.income)}
+              </SvgText>
+            </Svg>
+          </View>
+        )}
+        {!rows.length && (
+          <Text style={styles.amount}>
+            {money(kind === 'DESPESA' ? summary.expense : summary.income)}
           </Text>
+        )}
+
+        {rows.length === 0 ? (
+          <Empty
+            title={`Nenhuma ${kind === 'DESPESA' ? 'despesa' : 'receita'} neste mês`}
+            text="Adicione um lançamento no botão + para acompanhar seus grupos."
+          />
         ) : (
-          <Text style={s.muted}>Seu resumo aparece assim que você registrar uma despesa.</Text>
+          <View style={[s.wrap, { alignItems: 'flex-start', gap: 12 }]}>
+            {rows.map((g) => (
+              <Pressable
+                key={g.category.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${g.category.name}, ${money(g.cents)}, ${percentage(g.percentage)} ${kind === 'DESPESA' ? 'das despesas' : 'das receitas'}. Ver lançamentos.`}
+                onPress={() => onCategory(g.category.id, kind)}
+                style={({ pressed }) => [
+                  styles.category,
+                  {
+                    flexBasis: '28%',
+                    flexGrow: 1,
+                    minWidth: 80,
+                    borderRadius: 8,
+                    backgroundColor: pressed ? palette.selected : 'transparent',
+                  },
+                ]}
+              >
+                <View style={s.row}>
+                  <View
+                    style={{
+                      width: 9,
+                      height: 9,
+                      borderRadius: 5,
+                      backgroundColor: categoryColor(g.category, dark),
+                    }}
+                  />
+                  <Text style={[s.text, { flex: 1, fontSize: 12, fontWeight: '600' }]}>
+                    {g.category.name}
+                  </Text>
+                </View>
+                <View style={[s.wrap, { justifyContent: 'space-between', gap: 4 }]}>
+                  <Text style={[s.text, { fontSize: 12, fontWeight: '700' }]}>
+                    {money(g.cents)}
+                  </Text>
+                  <Text style={s.muted}>{percentage(g.percentage)} do total</Text>
+                </View>
+                <View style={styles.track}>
+                  <View
+                    style={{
+                      height: 8,
+                      borderRadius: 4,
+                      width: `${g.percentage}%`,
+                      backgroundColor: categoryColor(g.category, dark),
+                    }}
+                  />
+                </View>
+              </Pressable>
+            ))}
+          </View>
         )}
       </View>
-      {rows.length === 0 ? (
-        <Empty
-          title="Nenhuma despesa neste mês"
-          text="Adicione uma despesa no botão + para descobrir para onde seu dinheiro vai."
-        />
-      ) : (
-        <View style={s.card}>
-          <Text style={s.heading}>Para onde foi seu dinheiro</Text>
-          <Text style={s.muted}>Toque em uma categoria para ver seus lançamentos.</Text>
-          {rows.map((g) => (
-            <Pressable
-              key={g.category.id}
-              accessibilityRole="button"
-              accessibilityLabel={`${g.category.name}, ${money(g.cents)}, ${hidden ? 'valores ocultos' : percentage(g.percentage)} das despesas. Ver lançamentos.`}
-              onPress={() => onCategory(g.category.id)}
-              style={({ pressed }) => [styles.category, { opacity: pressed ? 0.65 : 1 }]}
-            >
-              <View style={s.row}>
-                <CategoryIcon category={g.category} size={36} />
-                <Text style={[s.text, { flex: 1, fontWeight: '600' }]}>{g.category.name}</Text>
-                <Ionicons name="chevron-forward" size={17} color={palette.muted} />
-              </View>
-              <View style={[s.wrap, { justifyContent: 'space-between', gap: 4 }]}>
-                <Text style={s.heading}>{money(g.cents)}</Text>
-                <Text style={s.muted}>{hidden ? '••••' : percentage(g.percentage)} do total</Text>
-              </View>
-              <View style={styles.track}>
-                <View
-                  style={{
-                    height: 8,
-                    borderRadius: 4,
-                    width: hidden ? '0%' : `${g.percentage}%`,
-                    backgroundColor: categoryColor(g.category.color),
-                  }}
-                />
-              </View>
-            </Pressable>
-          ))}
-          <View style={s.divider} />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ expanded: details }}
-            onPress={() => setDetails((v) => !v)}
-            style={({ pressed }) => [styles.disclosure, { opacity: pressed ? 0.65 : 1 }]}
-          >
-            <Text style={[s.text, { flex: 1, fontWeight: '600' }]}>Ver análise detalhada</Text>
-            <Ionicons
-              name={details ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color={palette.accent}
-            />
-          </Pressable>
-          {details && (
-            <View style={{ gap: 12 }} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
-              <Text style={s.muted}>
-                A linha soma a participação de cada categoria, na ordem acima, até chegar a 100%.
-              </Text>
-              {!hidden && (
-                <Svg width={width} height={175} accessible={false}>
-                  {[0, 50, 100].map((p) => (
-                    <React.Fragment key={p}>
-                      <Line
-                        x1={36}
-                        x2={width - 12}
-                        y1={145 - p * 1.2}
-                        y2={145 - p * 1.2}
-                        stroke={palette.border}
-                      />
-                      <SvgText x={0} y={149 - p * 1.2} fontSize={10} fill={palette.muted}>
-                        {p}%
-                      </SvgText>
-                    </React.Fragment>
-                  ))}
-                  <Polyline
-                    points={rows
-                      .map(
-                        (g, i) =>
-                          `${36 + (plotWidth * (i + 0.5)) / rows.length},${145 - g.cumulative * 1.2}`,
-                      )
-                      .join(' ')}
-                    fill="none"
-                    stroke={palette.accent}
-                    strokeWidth={3}
-                  />
-                  {rows.map((g, i) => (
-                    <React.Fragment key={g.category.id}>
-                      <Circle
-                        cx={36 + (plotWidth * (i + 0.5)) / rows.length}
-                        cy={145 - g.cumulative * 1.2}
-                        r={4}
-                        fill={palette.accent}
-                      />
-                      <SvgText
-                        x={36 + (plotWidth * (i + 0.5)) / rows.length}
-                        y={164}
-                        fontSize={10}
-                        fill={palette.muted}
-                        textAnchor="middle"
-                      >
-                        {i + 1}
-                      </SvgText>
-                    </React.Fragment>
-                  ))}
-                </Svg>
-              )}
-              {rows.map((g, i) => (
-                <Text key={g.category.id} style={s.muted}>
-                  {i + 1}. {g.category.name} · acumulado{' '}
-                  {hidden ? '••••' : percentage(g.cumulative)}
-                </Text>
-              ))}
-            </View>
-          )}
-        </View>
-      )}
     </>
   );
 }
 
 function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s, money } = useAppearance();
   const styles = chartStyles(palette);
   const months = Array.from({ length: 6 }, (_, i) => {
     const key = shiftMonth(month, i - 5);
@@ -221,7 +218,7 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
   const hasData = months.some((m) => m.income || m.expense);
   return (
     <View style={s.card} onLayout={(e) => setWidth(Math.max(160, e.nativeEvent.layout.width - 36))}>
-      <Text style={s.heading}>Receitas e despesas</Text>
+      <Text style={s.heading}>Últimos 6 meses</Text>
       <Text style={s.muted}>
         Compare o que entrou e saiu. Selecione um mês para ver os valores.
       </Text>
@@ -231,7 +228,7 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
       </View>
       {hasData ? (
         <>
-          {!hidden && (
+          {
             <Svg width={width} height={185} accessible={false}>
               {[0, 0.5, 1].map((p) => (
                 <React.Fragment key={p}>
@@ -287,7 +284,7 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
                 );
               })}
             </Svg>
-          )}
+          }
           <View style={[s.wrap, { gap: 8 }]}>
             {months.map((m) => (
               <Pressable
@@ -299,7 +296,7 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
                 style={({ pressed }) => [
                   styles.month,
                   selected === m.key && styles.selectedMonth,
-                  { opacity: pressed ? 0.65 : 1 },
+                  pressed && selected !== m.key && { backgroundColor: palette.selected },
                 ]}
               >
                 <Text
@@ -308,7 +305,7 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
                     {
                       fontSize: 13,
                       textTransform: 'capitalize',
-                      color: selected === m.key ? palette.accent : palette.muted,
+                      color: selected === m.key ? palette.onAccent : palette.muted,
                     },
                   ]}
                 >
@@ -321,13 +318,17 @@ function MonthlyChart({ ledger, month }: { ledger: Ledger; month: string }) {
             <Text style={[s.heading, { textTransform: 'capitalize' }]}>
               {monthName(current.key)}
             </Text>
-            <Detail label="Receitas" value={money(current.income)} color={palette.income} />
-            <Detail label="Despesas" value={money(current.expense)} color={palette.expense} />
+            <Detail label="Receitas" value={`+ ${money(current.income)}`} color={palette.income} />
+            <Detail
+              label="Despesas"
+              value={`− ${money(current.expense)}`}
+              color={palette.expense}
+            />
             <View style={s.divider} />
             <Detail
               label="Saldo do mês"
               value={money(current.balance)}
-              color={!hidden && current.balance < 0 ? palette.expense : palette.navy}
+              color={current.balance < 0 ? palette.expense : palette.navy}
             />
           </View>
         </>
@@ -361,23 +362,23 @@ function Legend({ color, label }: { color: string; label: string }) {
 }
 const chartStyles = (palette: Colors) =>
   StyleSheet.create({
-    summary: { backgroundColor: palette.selected, borderRadius: 20, padding: 20, gap: 8 },
+    summary: { backgroundColor: palette.card, borderRadius: 20, padding: 16, gap: 8 },
     amount: { color: palette.navy, fontSize: 30, fontWeight: '700' },
-    category: { paddingVertical: 10, gap: 10, minHeight: 48 },
+    category: { paddingVertical: 8, gap: 8, minHeight: 48, minWidth: 48 },
     track: { height: 8, backgroundColor: palette.track, borderRadius: 4, overflow: 'hidden' },
     disclosure: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48 },
     month: {
       paddingHorizontal: 10,
       paddingVertical: 12,
       borderRadius: 12,
-      minHeight: 44,
+      minHeight: 48,
       minWidth: '28%',
       flexGrow: 1,
       alignItems: 'center',
       backgroundColor: palette.background,
     },
     selectedMonth: {
-      backgroundColor: palette.selected,
+      backgroundColor: palette.accent,
       borderWidth: 1,
       borderColor: palette.accent,
     },

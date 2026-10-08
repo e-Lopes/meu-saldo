@@ -1,72 +1,26 @@
-﻿# Próximos passos — Meu Saldo
+# Próximos passos — Meu Saldo
 
-Atualizado em **07/10/2026**, após a publicação da versão **1.0.1** (`versionCode` 9). O projeto continua Android, gratuito, offline, com dados locais e distribuição por APK assinado.
+Atualizado em **08/10/2026**. O código continua Android, offline, com dados locais e distribuição por APK assinado. A versão configurada permanece 1.0.1 (`versionCode` 9); as alterações atuais ainda não representam uma nova publicação.
 
-## Entrega concluída
+## Implementado no código atual
 
-- [Release 1.0.1 publicada e marcada como latest](https://github.com/e-Lopes/meu-saldo/releases/tag/v1.0.1), com as correções de cadastro, tema escuro unificado e melhorias do Histórico.
-- Commit da entrega: `0c99929`. [Validação no GitHub](https://github.com/e-Lopes/meu-saldo/actions/runs/37675355842), [geração do candidato](https://github.com/e-Lopes/meu-saldo/actions/runs/37675355952) e [publicação](https://github.com/e-Lopes/meu-saldo/actions/runs/37676398304) concluídas com sucesso.
-- APK publicado com 28.063.668 bytes; SHA-256 do candidato conferido com o manifesto público e o digest do asset: `59291c6d00ce7f1f3af23ca550037e17a1fbe4f2ddca7dc202086b49a2c99262`. Publicação sem recompilar; assinatura e pacote originais verificados pelo workflow.
+- Recorrências semanais/mensais com recuperação de vencidos, cursor persistido, edição atual/próximos e encerramento preservando o histórico.
+- Categorias de receitas/despesas, paleta de 12 cores com colorKey persistida, migração do JSON antigo e backup com séries.
+- Resumo com totais dentro do saldo, até três grupos por coluna, percentuais alinhados e Ver todas em ambas.
+- Histórico com busca, quatro filtros alinhados, grupos por data e indicador de recorrência junto ao nome.
+- Formulário compacto, criação de categoria sem perder o lançamento e exclusão em Mais ações.
+- Tema escuro fixo, paleta unificada e valores sempre visíveis; removidos seletor de tema e ocultação.
+- Ajustes com Organização primeiro e explicação de dados locais em Privacidade. Atualizações somente nos Ajustes.
+- Novo ícone em assets/icon.png, usado no aplicativo e na abertura Android.
 
-- [Release 1.5.0 publicado](https://github.com/e-Lopes/meu-saldo/releases/tag/v1.5.0), com APK e manifesto de atualização disponíveis.
-- [Candidato Android](https://github.com/e-Lopes/meu-saldo/actions/runs/37091615803) compilado em Linux; [publicação](https://github.com/e-Lopes/meu-saldo/actions/runs/37092379142) concluída reutilizando o mesmo APK, sem recompilar. Hash SHA-256 do arquivo publicado conferido com o candidato e o manifesto.
-- Checagem TypeScript, formatação, nove testes dos scripts de release e verificações de configuração, versão e assinatura passaram.
-- `npm run release:prepare -- <versão>` sincroniza os arquivos de versão, incrementa `versionCode` e preserva notas anteriores.
-- Início, atualização, navegação inferior e backup separados de `App.tsx`; cálculos, persistência e contrato nativo mantidos em suas responsabilidades atuais.
-- Interface simplificada: cabeçalho compacto, até quatro categorias no Início, totais compactos no Histórico, detalhes sob demanda no Menu, atualização discreta e formulários com opções recolhidas e Salvar acessível com teclado.
-- Mantidos gráficos, filtros, busca sem distinguir acentos, categorias arquivadas, desfazer exclusão, temas Sistema/Claro/Escuro e ocultação de valores. Preservados centavos, datas civis, JSON/AtomicFile, pacote e assinatura originais.
+## Validação concluída
 
-**A conferência visual e de uso em aparelho físico continua pendente.** Publicação bem-sucedida e verificações técnicas não comprovam preservação dos dados durante uma instalação real nem usabilidade no celular. O roteiro detalhado está em [docs/ui-validation.md](docs/ui-validation.md); os registros anteriores desse documento descrevem etapas anteriores à publicação da 1.5.0.
+39 testes financeiros e de interação, checagem de tipos e formatação. APK debug compilado e instalado no Pixel 7/API 36, com dados preservados e conferência visual de Resumo, Histórico, Gráficos, Ajustes e abertura. Consulte [ui-validation.md](docs/ui-validation.md) para os limites dessa conferência.
 
-## Correção local — 07/10/2026
+## Prioridade antes de distribuir
 
-- Campo de valor: desativada a seleção automática que fazia o segundo dígito substituir o primeiro no cadastro rápido.
-- UI/UX: botão de limpar sempre no mesmo lugar, desabilitado quando o campo está vazio ou durante o salvamento; o campo não muda de largura após o primeiro dígito.
-- Incluída a dica visual “Em reais. Ex.: 25 ou 25,50.” e desativada a autocorreção do valor.
-- Removida, a pedido do usuário, a orientação falada adicionada ao campo (`accessibilityHint`). Não adicionar orientações para TalkBack ou recursos semelhantes nesta correção.
-- Tema escuro unificado: azul para seleções, filtros, botões, navegação, cursor e seleção de texto. Removida a paleta exclusiva dos Gráficos; cores de receita/despesa preservadas. Cor do texto sobre botões centralizada na paleta para manter contraste.
-- TypeScript e formatação do formulário passaram. A confirmação da digitação e do layout no Android continua pendente; não houve geração nem publicação de APK nesta correção.
+Concluir no Android os cenários de teclado aberto, fonte ampliada, TalkBack, histórico extenso, fluxos completos de recorrência e seletores reais de backup. Conferir abertura em Android anterior à API 31 e instalação de APK release sobre a versão anterior assinada.
 
-## Prioridade 1 — conferir a atualização no celular
+Após a conferência, preparar uma nova versão e suas notas, gerar um candidato, testar no aparelho físico e publicar o mesmo APK. A versão publicada anteriormente continua disponível em [Releases](https://github.com/e-Lopes/meu-saldo/releases/latest); este trabalho não alterou sua numeração nem disparou uma publicação manual.
 
-### Melhorias locais de cadastro e Histórico — 07/10/2026
-
-- Até três categorias ativas mais usadas aparecem no formulário; ordenação por quantidade de despesas, sem selecionar automaticamente. O seletor completo continua disponível.
-- “Salvar e adicionar outro” disponível em novos lançamentos: mantém data, tipo e categoria, limpa valor/descrição e retorna ao valor. O formulário limpo pode ser fechado sem pedir descarte; erros de gravação preservam o preenchimento. Proteção contra toques repetidos durante o salvamento.
-- Confirmação visual de salvamento por três segundos, na tela principal ou no cadastro em sequência, somente após gravar os dados; sem orientação falada adicionada.
-- Histórico sem repetir a categoria quando não há descrição; identificação de categorias arquivadas preservada.
-- Filtros ativos de tipo, categoria e busca com botão de remoção individual; mantida a opção de limpar todos.
-- `npm run validate` passou. Validar no celular: vários cadastros seguidos sem duplicação, manutenção da data/categoria, fechamento após salvar, recuperação de falha de gravação, confirmação temporária, categorias arquivadas e remoção de cada filtro sem afetar os demais. Conferir teclado aberto e telas estreitas. Sem APK gerado ou publicado nesta etapa.
-
-Usar dados fictícios para os cenários destrutivos e guardar uma cópia de segurança antes da atualização.
-
-1. Instalar a 1.0.1 sobre a versão anterior, sem desinstalar. Confirmar registros, categorias, tema e preferência de ocultação após abrir e reiniciar o app.
-2. Cadastrar e editar um lançamento; verificar data no mês escolhido, erros de valor/categoria, teclado e botão Salvar. Confirmar preservação dos filtros ao voltar da edição.
-3. Exportar um backup e restaurá-lo; conferir os dados recuperados. Cancelar seletores e testar arquivo inválido sem alterar os dados existentes. Só uma exportação concluída deve atualizar sua data no Menu.
-4. Excluir e desfazer; confirmar recuperação do identificador, data, valor, descrição e categoria originais. Conferir também o encerramento do prazo da ação.
-5. Ativar modo avião e continuar consultando, cadastrando e editando normalmente.
-6. Registrar aparelho, versão do Android, versão anterior, resultados e problemas em `docs/ui-validation.md`, distinguindo cenários aprovados dos ainda não executados.
-
-## Prioridade 2 — conferir a interface simplificada
-
-- Início: mês vazio, somente receitas, saldo negativo e mais de quatro categorias; acesso aos Gráficos e ao Histórico filtrado.
-- Histórico e Gráficos: busca por `alimentacao`, combinação de filtros, totais, troca de mês/ano e evolução de seis meses com períodos vazios.
-- Formulário: alternar receita/despesa, buscar categoria, recolher descrição sem perder texto, alterar a data para outro mês e usar Voltar com alterações não salvas.
-- Valor: digitar `1` e depois `2` e confirmar `12`, sem seleção automática; testar `25,50`, apagar dígitos, editar no meio do texto, sair e voltar ao campo e limpar/recomeçar. Confirmar largura estável, dica legível e botão Salvar acessível com o teclado aberto.
-- Tema escuro: conferir o mesmo azul nos seletores de lançamento/gráficos/tema, filtros do Histórico, categorias selecionadas, navegação e botões. Verificar cursor e seleção de texto no Android e alternância Sistema/Claro/Escuro, mantendo receita e despesa distinguíveis.
-- Categorias: criar, personalizar, arquivar uma categoria usada, reativar e excluir uma sem registros; preservar referências e confirmar descarte de alterações.
-- Menu e atualizações: abrir uma seção por vez, consultar notas, dispensar aviso e cancelar download; testar recuperação de backup com dados fictícios quando a leitura falhar.
-- Acessibilidade: temas claro/escuro/sistema, fonte ampliada, nomes longos, telas estreitas e rótulos. Ocultar valores deve mascarar também totais, gráficos e textos de acessibilidade.
-
-Corrigir os problemas encontrados antes de ampliar funcionalidades. Há cinco testes focados de valores, datas, backups e totais; o formulário e a interface continuam exigindo conferência manual em aparelho físico.
-
-## Distribuição e próximas versões
-
-- Validação em todos os pushes e PRs: TypeScript, formatação, cinco testes financeiros, onze testes de release e configuração. Sem gerar APK ou acessar secrets de assinatura nessa rotina.
-- Push de release gera candidato sem publicar; publicação após conferência pelo workflow de promoção. Publicação imediata disponível somente como opção explícita no disparo manual.
-- Actions fixadas por commits consultados nos repositórios oficiais, com propostas semanais de atualização pelo Dependabot. Credenciais de assinatura criadas apenas após as validações e geração do projeto Android.
-- Verificações locais e workflows no GitHub aprovados; versão 1.0.1 publicada a pedido do usuário usando o mesmo candidato. Conferência em aparelho físico pendente.
-
-Fluxo recomendado: **preparar versão → gerar candidato → conferir no celular → publicar o mesmo candidato**. Os comandos, workflows e verificações estão em [docs/releases.md](docs/releases.md). A confirmação de publicação autoriza distribuir; não declara que houve teste em aparelho físico. Registrar sempre as validações realizadas e pendentes nas notas.
-
-Manter a compilação no GitHub Actions em Linux e `android/` gerada pelo Expo, com personalizações no plugin e módulo local. Preservar pacote e chave de assinatura para permitir atualização sobre instalações existentes. Login, sincronização, API financeira, migração de banco ou EAS Update não são próximos passos necessários para o uso pessoal e familiar atual.
+Manter android/ gerada pelo Expo, com personalizações no plugin e módulo local. Preservar pacote e chave de assinatura. Não há necessidade de login, sincronização, API financeira ou banco de dados para o escopo atual.

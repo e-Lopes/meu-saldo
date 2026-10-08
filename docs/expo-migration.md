@@ -2,11 +2,15 @@
 
 A versão 1.3.0 (versionCode 4) substitui a interface Kotlin/Compose por React Native e TypeScript com Expo. A entrega continua sendo um APK Android, gratuito e independente de navegador, Metro ou serviços de hospedagem em produção.
 
+## Evolução atual — 08/10/2026
+
+O código atual usa JSON 2, com categorias por tipo, colorKey persistida, regras separadas e vínculos das ocorrências. Arquivos JSON 1 são migrados com preservação dos lançamentos. Tema escuro é fixo e ocultação foi removida; somente a data de exportação é usada das preferências financeiras. Os detalhes abaixo registram a migração original; consulte [desenvolvimento](desenvolvimento.md) para o modelo atual.
+
 ## Compatibilidade com os dados existentes
 
 O aplicativo mantém o pacote `br.com.meusaldo`, o certificado original e o arquivo `context.filesDir/saldo.json`. O módulo local `MeuSaldoNative` lê esse mesmo arquivo diretamente; não copia os registros para outra pasta e não cria banco de dados.
 
-O formato continua com `version: 1`, categorias (`id`, `name`, `color`, `icon`, `archived`) e lançamentos (`id`, `kind`, `cents`, `date`, `categoryId`, `description`). As cores continuam números ARGB e os ícones continuam os identificadores usados no JSON anterior. A interface exibe ícones vetoriais a partir desses identificadores.
+Na migração original para Expo, o formato continuou com `version: 1`, categorias (`id`, `name`, `color`, `icon`, `archived`) e lançamentos (`id`, `kind`, `cents`, `date`, `categoryId`, `description`). As cores continuam números ARGB e os ícones continuam os identificadores usados no JSON anterior. A interface exibe ícones vetoriais a partir desses identificadores.
 
 Leitura e gravação usam Android AtomicFile, incluindo recuperação do `.bak` de uma gravação interrompida. A fila TypeScript calcula cada alteração sobre o último estado salvo. A interface só publica o novo estado depois que a gravação nativa conclui. Dados inválidos produzem um aviso e permanecem no disco, permitindo recuperação por backup manual.
 

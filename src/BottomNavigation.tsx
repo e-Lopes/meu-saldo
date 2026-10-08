@@ -6,10 +6,10 @@ import { controlSize, radius, spacing } from './theme/tokens';
 
 export type Tab = 'home' | 'history' | 'charts' | 'menu';
 const tabs = {
-  home: { icon: 'home-outline', label: 'Início' },
+  home: { icon: 'home-outline', label: 'Resumo' },
   history: { icon: 'list-outline', label: 'Histórico' },
   charts: { icon: 'bar-chart-outline', label: 'Gráficos' },
-  menu: { icon: 'menu-outline', label: 'Menu' },
+  menu: { icon: 'settings-outline', label: 'Ajustes' },
 } as const;
 export function BottomNavigation({
   tab,
@@ -72,7 +72,8 @@ export function BottomNavigation({
               minHeight: controlSize.touch,
               paddingVertical: spacing.xs,
               gap: spacing.xs,
-              opacity: pressed ? 0.65 : 1,
+              backgroundColor: pressed ? palette.selected : 'transparent',
+              borderRadius: radius.control,
             })}
           >
             <Ionicons

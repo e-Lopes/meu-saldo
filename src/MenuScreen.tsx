@@ -1,12 +1,11 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Text, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAppearance } from './Appearance';
 import { Ledger } from './finance';
 import { MenuRow } from './MenuRow';
-import { Button, Card, SegmentedControl } from './ui';
-import { radius, spacing } from './theme/tokens';
+import { Card, SectionHeader } from './ui';
 
-type Section = 'appearance' | 'backup' | 'updates' | 'help' | 'privacy';
 type Props = {
   ledger: Ledger | null;
   version: string;
@@ -31,167 +30,101 @@ export function MenuScreen({
   onExport,
   onImport,
 }: Props) {
-  const { palette, s, theme, setTheme, saving, lastBackup } = useAppearance();
-  const [section, setSection] = useState<Section | null>(null);
-  const unavailable = ledger === null;
-  useEffect(() => {
-    if (unavailable && !loading) setSection('backup');
-    else if (updateVersion) setSection('updates');
-  }, [unavailable, loading, updateVersion]);
-  const toggle = (next: Section) => setSection((previous) => (previous === next ? null : next));
+  const { palette, s, lastBackup } = useAppearance();
+  const [showUpdates, setShowUpdates] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const reminder =
     !!ledger?.entries.length && (!lastBackup || Date.now() - lastBackup > 14 * 86400000);
-  const detail = {
-    backgroundColor: palette.background,
-    borderRadius: radius.control,
-    padding: spacing.lg,
-    gap: spacing.md,
-  };
   return (
     <>
+      <SectionHeader>Organização</SectionHeader>
       <Card>
         <MenuRow
           icon="grid-outline"
           title="Categorias"
-          subtitle="Organize suas despesas"
+          subtitle="Organize receitas e despesas"
           disabled={!ledger || busy}
           onPress={onCategories}
         />
-        <View style={s.divider} />
-        <MenuRow
-          icon="color-palette-outline"
-          title="Aparência"
-          subtitle={
-            { system: 'Acompanhar o celular', light: 'Tema claro', dark: 'Tema escuro' }[theme]
-          }
-          expanded={section === 'appearance'}
-          onPress={() => toggle('appearance')}
-        />
-        {section === 'appearance' && (
-          <View style={detail}>
-            <SegmentedControl
-              label="Tema do aplicativo"
-              value={theme}
-              disabled={saving}
-              onChange={(value) => void setTheme(value)}
-              options={[
-                { value: 'system', label: 'Sistema' },
-                { value: 'light', label: 'Claro' },
-                { value: 'dark', label: 'Escuro' },
-              ]}
-            />
-          </View>
-        )}
       </Card>
+      <SectionHeader>Dados e backup</SectionHeader>
       <Card>
         <MenuRow
-          icon="download-outline"
-          title="Cópia de segurança"
-          subtitle={
-            reminder
-              ? 'Salve uma cópia dos seus registros'
-              : lastBackup
-                ? `Última cópia: ${new Date(lastBackup).toLocaleDateString('pt-BR')}`
-                : 'Salvar ou recuperar registros'
-          }
-          expanded={section === 'backup'}
-          highlight={reminder}
-          onPress={() => toggle('backup')}
+          icon="share-outline"
+          title="Exportar backup"
+          subtitle="Salvar uma cópia dos seus dados"
+          disabled={!ledger || busy || backupBusy}
+          onPress={onExport}
         />
-        {section === 'backup' && (
-          <View style={detail}>
-            <Text style={s.muted}>
-              Salve uma cópia antes de trocar de celular ou desinstalar o app.
-            </Text>
-            <Button
-              title={backupBusy ? 'Aguarde…' : 'Salvar uma cópia'}
-              onPress={onExport}
-              disabled={!ledger || backupBusy || busy}
-            />
-            <Button
-              secondary
-              title="Restaurar uma cópia"
-              onPress={onImport}
-              disabled={loading || backupBusy || busy}
-            />
-            <Text style={s.muted}>
-              A restauração pede confirmação antes de substituir seus registros.
-            </Text>
-            {!!lastBackup && (
-              <Text style={s.muted}>
-                Última cópia salva em {new Date(lastBackup).toLocaleString('pt-BR')}. Confira se o
-                arquivo continua guardado.
-              </Text>
-            )}
-          </View>
-        )}
         <View style={s.divider} />
         <MenuRow
           icon="refresh-outline"
-          title="Atualizações"
-          subtitle={
-            updateVersion ? `Versão ${updateVersion} disponível` : `Versão instalada: ${version}`
-          }
-          expanded={section === 'updates'}
-          highlight={!!updateVersion}
-          onPress={() => toggle('updates')}
+          title="Restaurar backup"
+          subtitle="Recuperar dados de um arquivo"
+          disabled={loading || busy || backupBusy}
+          onPress={onImport}
         />
-        {section === 'updates' && updateContent}
+        <View style={s.divider} />
+        {reminder && (
+          <Text style={{ color: palette.warning, fontSize: 14 }}>
+            Você ainda não exportou uma cópia recente.
+          </Text>
+        )}
+        {!!lastBackup && (
+          <Text style={s.muted}>
+            Última exportação: {new Date(lastBackup).toLocaleString('pt-BR')}.
+          </Text>
+        )}
+        <Text style={s.muted}>Restaurar substitui os registros atuais após confirmação.</Text>
       </Card>
+      <SectionHeader>Sobre o app</SectionHeader>
       <Card>
         <MenuRow
-          icon="help-circle-outline"
-          title="Como usar"
-          expanded={section === 'help'}
-          onPress={() => toggle('help')}
+          icon="download-outline"
+          title="Atualizações"
+          subtitle={
+            updateVersion
+              ? `Versão ${updateVersion} disponível`
+              : 'Buscar uma nova versão do aplicativo'
+          }
+          expanded={showUpdates}
+          onPress={() => setShowUpdates((value) => !value)}
         />
-        {section === 'help' && (
-          <View style={detail}>
-            <Text style={s.text}>1. Toque em + para registrar uma receita ou despesa.</Text>
-            <Text style={s.text}>2. Escolha o mês para consultar saldo, histórico e gráficos.</Text>
-            <Text style={s.text}>
-              3. Toque em um lançamento no Histórico para editar ou excluir.
-            </Text>
-            <Text style={s.text}>4. Salve uma cópia dos registros regularmente.</Text>
-            <Text style={s.muted}>
-              O saldo mostra as receitas menos as despesas do mês, sem somar meses anteriores.
-            </Text>
-          </View>
-        )}
+        {showUpdates && updateContent}
+        <View style={s.divider} />
+        <View style={[s.row, { minHeight: 48 }]}>
+          <Ionicons name="information-circle-outline" size={24} color={palette.muted} />
+          <Text style={[s.text, { flex: 1 }]}>Versão instalada</Text>
+          <Text style={s.muted}>{version}</Text>
+        </View>
         <View style={s.divider} />
         <MenuRow
           icon="shield-checkmark-outline"
           title="Privacidade"
-          subtitle="Seus registros ficam neste celular"
-          expanded={section === 'privacy'}
-          onPress={() => toggle('privacy')}
+          expanded={showPrivacy}
+          onPress={() => setShowPrivacy((value) => !value)}
         />
-        {section === 'privacy' && (
-          <View style={detail}>
-            <Text style={s.text}>
-              Sem conta, anúncios ou envio de registros financeiros. Cada celular tem seus próprios
-              dados.
+        {showPrivacy && (
+          <View style={{ gap: 8 }}>
+            <View style={s.row}>
+              <Ionicons name="shield-checkmark-outline" size={20} color={palette.muted} />
+              <Text style={[s.muted, { flex: 1 }]}>
+                Seus dados ficam apenas neste celular. Exporte um backup para recuperá-los ao trocar
+                de aparelho ou reinstalar o app.
+              </Text>
+            </View>
+
+            <Text style={s.muted}>
+              Sem cadastro, anúncios ou envio de registros financeiros. Não há sincronização
+              automática na nuvem.
             </Text>
             <Text style={s.muted}>
-              A internet é usada para verificar e baixar atualizações. O GitHub recebe dados dessas
-              requisições, como IP e versão do app.
-            </Text>
-            <Text style={s.muted}>
-              Não há cópia automática na nuvem. Desinstalar ou limpar os dados apaga os registros
-              deste celular.
-            </Text>
-            <Text style={s.muted}>
-              Os arquivos de cópia não são criptografados. Guarde-os em um lugar seguro. Ocultar
-              valores protege a tela, sem criptografar os arquivos.
-            </Text>
-            <Text style={s.muted}>
-              Você pode compartilhar o aplicativo com amigos e familiares sem compartilhar suas
-              finanças.
+              A internet é usada para atualizações pelo GitHub. Os backups exportados não têm senha.
             </Text>
           </View>
         )}
       </Card>
-      <Text style={[s.muted, { textAlign: 'center' }]}>Meu Saldo {version} · Uso offline</Text>
+      <Text style={[s.muted, { textAlign: 'center' }]}>Offline · Sem cadastro · Sem anúncios</Text>
     </>
   );
 }

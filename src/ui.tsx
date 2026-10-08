@@ -6,6 +6,7 @@ import {
   TextInputProps,
   View,
   StyleProp,
+  StyleSheet,
   ViewStyle,
   useWindowDimensions,
 } from 'react-native';
@@ -33,11 +34,13 @@ export function MetricCard({
   value,
   tone,
   stacked,
+  onPress,
 }: {
   label: string;
   value: string;
   tone: 'income' | 'expense';
   stacked?: boolean;
+  onPress?: () => void;
 }) {
   const { palette, s } = useAppearance();
   const { width, fontScale } = useWindowDimensions();
@@ -48,13 +51,21 @@ export function MetricCard({
         flexGrow: 1,
         flexBasis: fullWidth ? '100%' : 130,
         backgroundColor: palette.soft,
-        borderWidth: 1,
-        borderColor: palette.border,
         gap: spacing.xs,
       }}
     >
-      <Text style={[s.muted, { color: palette[tone] }]}>{label}</Text>
-      <Text style={[typography.amount, { color: palette[tone] }]}>{value}</Text>
+      <Pressable
+        accessibilityRole={onPress ? 'button' : undefined}
+        accessibilityLabel={`${label}: ${value}${onPress ? '. Ver lançamentos.' : ''}`}
+        onPress={onPress}
+        disabled={!onPress}
+        style={({ pressed }) => ({ minHeight: 48, gap: spacing.xs, opacity: pressed ? 0.65 : 1 })}
+      >
+        <Text style={[s.muted, { color: palette[tone] }]}>{label}</Text>
+        <Text style={[typography.amount, { color: palette[tone] }]}>
+          {tone === 'income' ? '+' : '−'} {value}
+        </Text>
+      </Pressable>
     </Card>
   );
 }
@@ -99,8 +110,9 @@ export function SegmentedControl<T extends string>({
             justifyContent: 'center',
             padding: spacing.sm,
             borderRadius: radius.control,
-            backgroundColor: value === option.value ? palette.selected : 'transparent',
-            opacity: disabled ? 0.45 : pressed ? 0.65 : 1,
+            backgroundColor:
+              value === option.value ? palette.accent : pressed ? palette.selected : 'transparent',
+            opacity: disabled ? 0.45 : 1,
           })}
         >
           <Text
@@ -108,7 +120,7 @@ export function SegmentedControl<T extends string>({
               s.text,
               {
                 textAlign: 'center',
-                color: value === option.value ? palette.accent : palette.navy,
+                color: value === option.value ? palette.onAccent : palette.navy,
                 fontWeight: value === option.value ? '700' : '400',
               },
             ]}
@@ -145,8 +157,8 @@ export function Button({
       disabled={disabled}
       style={({ pressed }) => [
         s.button,
-        secondary && { backgroundColor: palette.soft },
-        danger && { backgroundColor: palette.soft },
+        secondary && { backgroundColor: pressed ? palette.selected : palette.soft },
+        danger && { backgroundColor: pressed ? palette.selected : palette.soft },
         { opacity: disabled ? 0.45 : pressed ? 0.75 : 1 },
       ]}
     >
@@ -188,7 +200,9 @@ export function IconButton({
           minHeight: 48,
           alignItems: 'center',
           justifyContent: 'center',
-          opacity: disabled ? 0.4 : pressed ? 0.5 : 1,
+          backgroundColor: pressed ? palette.selected : 'transparent',
+          borderRadius: radius.control,
+          opacity: disabled ? 0.4 : 1,
         },
       ]}
     >
@@ -220,17 +234,21 @@ export function Chip({
       style={({ pressed }) => [
         s.chip,
         selected && s.chipSelected,
-        { opacity: disabled ? 0.4 : pressed ? 0.65 : 1 },
+        !selected && pressed && { backgroundColor: palette.selected },
+        { opacity: disabled ? 0.4 : 1 },
       ]}
     >
-      <View style={[s.row, { flexWrap: 'wrap' }]}>
+      <View style={[s.row, { justifyContent: 'center', minWidth: 0 }]}>
         {React.Children.map(children, (child) =>
-          typeof child === 'string' || typeof child === 'number' ? (
+          typeof child === 'string' && !child.trim() ? null : typeof child === 'string' ||
+            typeof child === 'number' ? (
             <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
               style={[
                 s.text,
-                { flexShrink: 1 },
-                selected && { color: palette.accent, fontWeight: '600' },
+                { flexShrink: 1, textAlign: 'center' },
+                selected && { color: palette.onAccent, fontWeight: '600' },
               ]}
             >
               {child}
@@ -245,13 +263,13 @@ export function Chip({
 }
 export function CategoryIcon({
   category,
-  size = 42,
+  size = 36,
 }: {
-  category: Pick<Category, 'color' | 'icon'>;
+  category: Pick<Category, 'color' | 'colorKey' | 'icon'>;
   size?: number;
 }) {
-  const { palette } = useAppearance();
-  const color = categoryColor(category.color);
+  const { dark, palette } = useAppearance();
+  const color = categoryColor(category, dark);
   return (
     <View
       accessible={false}
@@ -259,14 +277,21 @@ export function CategoryIcon({
       style={{
         width: size,
         height: size,
-        backgroundColor: color + '22',
-        borderRadius: 13,
+        backgroundColor: palette.card,
+        borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
+      <View
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFill,
+          { backgroundColor: color + (dark ? '22' : '10'), borderRadius: 8 },
+        ]}
+      />
       {category.icon.startsWith('emoji:') ? (
-        <Text allowFontScaling={false} style={{ fontSize: size * 0.55 }}>
+        <Text allowFontScaling={false} style={{ fontSize: size * 0.5 }}>
           {category.icon.slice(6)}
         </Text>
       ) : (
@@ -275,8 +300,8 @@ export function CategoryIcon({
             categoryIconOptions.find((option) => option.value === category.icon)?.glyph ??
             'shapes-outline'
           }
-          size={size * 0.55}
-          color={palette.navy}
+          size={size * 0.5}
+          color={color}
         />
       )}
     </View>
@@ -287,17 +312,19 @@ export function Field({
   error,
   helper,
   inputRef,
+  hideLabel = false,
   ...props
 }: TextInputProps & {
   label: string;
   error?: string;
   helper?: string;
   inputRef?: React.Ref<TextInput>;
+  hideLabel?: boolean;
 }) {
   const { palette, s } = useAppearance();
   return (
     <View>
-      <Text style={s.label}>{label}</Text>
+      {!hideLabel && <Text style={s.label}>{label}</Text>}
       <TextInput
         ref={inputRef}
         accessibilityLabel={label}
@@ -308,11 +335,11 @@ export function Field({
         style={[s.input, error ? { borderColor: palette.expense } : null, props.style]}
       />
       {!!error && (
-        <Text accessibilityRole="alert" style={[s.muted, { color: palette.expense, marginTop: 6 }]}>
+        <Text accessibilityRole="alert" style={[s.muted, { color: palette.expense, marginTop: 8 }]}>
           {error}
         </Text>
       )}
-      {!!helper && !error && <Text style={[s.muted, { marginTop: 6 }]}>{helper}</Text>}
+      {!!helper && !error && <Text style={[s.muted, { marginTop: 8 }]}>{helper}</Text>}
     </View>
   );
 }

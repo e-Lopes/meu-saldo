@@ -1,36 +1,36 @@
-import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, useColorScheme, View } from 'react-native';
+import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import Native from './native';
 import { money as formatMoney } from './finance';
 import { errorMessage } from './useLedger';
 
-import { lightColors, darkColors, Colors } from './theme/palettes';
+import { darkColors, Colors } from './theme/palettes';
 import { spacing, radius, controlSize, typography } from './theme/tokens';
 export type { Colors };
 export const createStyles = (p: Colors) =>
   StyleSheet.create({
     page: { flex: 1, backgroundColor: p.background },
-    content: { padding: spacing.screen, gap: spacing.card, paddingBottom: 30 },
+    content: { padding: spacing.screen, gap: spacing.card, paddingBottom: spacing.xl },
     card: {
       backgroundColor: p.card,
       padding: spacing.card,
       borderRadius: radius.card,
       gap: spacing.md,
     },
-    row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
     title: { ...typography.title, color: p.navy },
     heading: { ...typography.heading, color: p.navy },
     text: { ...typography.body, color: p.navy },
     muted: { ...typography.muted, color: p.muted },
-    label: { color: p.navy, fontSize: 15, fontWeight: '600', marginBottom: 8 },
+    label: { color: p.navy, fontSize: 16, fontWeight: '600', marginBottom: 8 },
     input: {
       borderWidth: 1,
       borderColor: p.border,
       backgroundColor: p.card,
       borderRadius: radius.control,
-      paddingHorizontal: 14,
-      paddingVertical: 13,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
       fontSize: 17,
       color: p.navy,
       minHeight: controlSize.input,
@@ -39,7 +39,7 @@ export const createStyles = (p: Colors) =>
       backgroundColor: p.accent,
       borderRadius: radius.control,
       minHeight: controlSize.touch,
-      padding: 13,
+      padding: 8,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -52,39 +52,29 @@ export const createStyles = (p: Colors) =>
     chip: {
       maxWidth: '100%',
       borderRadius: radius.control,
-      borderWidth: 1,
-      borderColor: p.border,
-      backgroundColor: p.card,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      backgroundColor: p.soft,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
       minHeight: controlSize.touch,
+      minWidth: controlSize.touch,
       justifyContent: 'center',
     },
-    chipSelected: { borderColor: p.accent, backgroundColor: p.selected },
+    chipSelected: { backgroundColor: p.accent },
     divider: { height: 1, backgroundColor: p.border },
   });
-type Mode = 'system' | 'light' | 'dark';
-type Preferences = { theme: Mode; hidden: boolean; lastBackup: number };
+type Preferences = { lastBackup: number };
 type AppearanceValue = {
   palette: Colors;
   s: ReturnType<typeof createStyles>;
   dark: boolean;
-  hidden: boolean;
-  theme: Mode;
   lastBackup: number;
-  saving: boolean;
   money: (cents: number) => string;
-  setTheme: (theme: Mode) => Promise<void>;
-  toggleHidden: () => Promise<void>;
   refreshPreferences: () => Promise<void>;
 };
 const AppearanceContext = createContext<AppearanceValue | null>(null);
 export function AppearanceProvider({ children }: { children: ReactNode }) {
-  const system = useColorScheme();
-  const [prefs, setPrefs] = useState<Preferences>({ theme: 'system', hidden: true, lastBackup: 0 });
+  const [prefs, setPrefs] = useState<Preferences>({ lastBackup: 0 });
   const [ready, setReady] = useState(false);
-  const [pending, setPending] = useState(0);
-  const queue = useRef<Promise<unknown>>(Promise.resolve());
   const refreshPreferences = async () => {
     setPrefs(await Native.getPreferences());
   };
@@ -93,35 +83,16 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
       .catch((e) => Alert.alert('Preferências indisponíveis', errorMessage(e)))
       .finally(() => setReady(true));
   }, []);
-  const dark = prefs.theme === 'dark' || (prefs.theme === 'system' && system === 'dark');
-  const palette = dark ? darkColors : lightColors;
+  const palette = darkColors;
   const styles = useMemo(() => createStyles(palette), [palette]);
-  const save = async (key: 'theme' | 'hidden', value: string) => {
-    setPending((n) => n + 1);
-    const job = queue.current
-      .catch(() => {})
-      .then(async () => {
-        await Native.setPreference(key, value);
-        await refreshPreferences();
-      })
-      .catch((e) => Alert.alert('Preferência não salva', errorMessage(e)))
-      .finally(() => setPending((n) => n - 1));
-    queue.current = job;
-    await job;
-  };
   return (
     <AppearanceContext.Provider
       value={{
         palette,
         s: styles,
-        dark,
-        hidden: prefs.hidden,
-        theme: prefs.theme,
+        dark: true,
         lastBackup: prefs.lastBackup,
-        saving: pending > 0,
-        money: (cents) => (prefs.hidden ? '••••' : formatMoney(cents)),
-        setTheme: (mode) => save('theme', mode),
-        toggleHidden: () => save('hidden', String(!prefs.hidden)),
+        money: formatMoney,
         refreshPreferences,
       }}
     >

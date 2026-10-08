@@ -23,27 +23,31 @@ import { HistoryScreen } from './src/HistoryScreen';
 import { MenuScreen } from './src/MenuScreen';
 import { EntryForm } from './src/EntryForm';
 import { SaveNotice } from './src/SaveNotice';
-import { Entry, Kind, Ledger, shiftMonth, today } from './src/finance';
-import { Button, IconButton, MonthSelector } from './src/ui';
+import {
+  Entry,
+  Kind,
+  Ledger,
+  Recurrence,
+  removeEntry,
+  saveEntry,
+  shiftMonth,
+  today,
+} from './src/finance';
+import { Button, MonthSelector } from './src/ui';
 import { errorMessage, useLedger } from './src/useLedger';
 import { useUpdates } from './src/useUpdates';
 
 function Main() {
-  const {
-    palette,
-    s,
-    dark,
-    hidden,
-    toggleHidden,
-    saving: preferenceBusy,
-    refreshPreferences,
-  } = useAppearance();
+  const { palette, s, dark, refreshPreferences } = useAppearance();
   const store = useLedger();
   const updates = useUpdates();
   const [tab, setTab] = useState<Tab>('home');
   const [month, setMonth] = useState(today().slice(0, 7));
   const [entry, setEntry] = useState<Entry | null | undefined>();
+  const [initialKind, setInitialKind] = useState<Kind>('DESPESA');
+  const [chartsKind, setChartsKind] = useState<Kind>('DESPESA');
   const [savedEvent, setSavedEvent] = useState(0);
+  const [savedMessage, setSavedMessage] = useState('Lançamento salvo');
   const [categories, setCategories] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -54,6 +58,7 @@ function Main() {
     index: number;
     category: Ledger['categories'][number] | undefined;
     deadline: number;
+    recurrence: Recurrence | undefined;
   } | null>(null);
   const {
     busy: backupBusy,
@@ -92,21 +97,36 @@ function Main() {
     setHistoryKind(null);
     setCategoryFilter(null);
   };
-  const openCategoryHistory = (key: string) => {
+  const openCategoryHistory = (key: string, kind: Kind = 'DESPESA') => {
     setCategoryFilter(key);
-    setHistoryKind('DESPESA');
+    setHistoryKind(kind);
     setSearch('');
     chooseTab('history');
   };
-  async function deleteEntry(key: string) {
+  const openKindHistory = (kind: Kind) => {
+    clearFilters();
+    setHistoryKind(kind);
+    chooseTab('history');
+  };
+  const addEntry = (kind: Kind = 'DESPESA') => {
+    if (!store.busy && store.ledger) {
+      setInitialKind(kind);
+      setEntry(null);
+    }
+  };
+  async function deleteEntry(key: string, stopRecurrence = false) {
     let removed: Entry | undefined;
     let position = 0;
     let originalCategory: Ledger['categories'][number] | undefined;
+    let originalRecurrence: Recurrence | undefined;
     await store.mutate((l) => {
       position = l.entries.findIndex((e) => e.id === key);
       removed = l.entries[position];
       originalCategory = l.categories.find((c) => c.id === removed?.categoryId);
-      return { ...l, entries: l.entries.filter((e) => e.id !== key) };
+      originalRecurrence = stopRecurrence
+        ? l.recurrences.find((r) => r.id === removed?.recurrenceId)
+        : undefined;
+      return removeEntry(l, key, stopRecurrence);
     });
     if (removed) {
       const timeout = await AccessibilityInfo.getRecommendedTimeoutMillis(15000).catch(() => 15000);
@@ -115,6 +135,7 @@ function Main() {
         index: position,
         category: originalCategory,
         deadline: Date.now() + timeout,
+        recurrence: originalRecurrence,
       });
     }
   }
@@ -135,7 +156,12 @@ function Main() {
           snapshot.category && !l.categories.some((c) => c.id === snapshot.category!.id)
             ? [...l.categories, snapshot.category]
             : l.categories;
-        return { ...l, entries, categories };
+        const recurrences = snapshot.recurrence
+          ? l.recurrences.map((r) =>
+              r.id === snapshot.recurrence!.id ? { ...r, active: snapshot.recurrence!.active } : r,
+            )
+          : l.recurrences;
+        return { ...l, entries, categories, recurrences };
       });
       setUndo(null);
     } catch (e) {
@@ -143,7 +169,7 @@ function Main() {
     }
   }
   const ledger = store.ledger;
-  const title = { home: 'Meu Saldo', history: 'Histórico', charts: 'Gráficos', menu: 'Menu' }[tab];
+  const title = { home: 'Resumo', history: 'Histórico', charts: 'Gráficos', menu: 'Ajustes' }[tab];
   const chooseTab = (next: Tab) => {
     if (next !== tab) {
       navigation.current.push(tab);
@@ -153,19 +179,11 @@ function Main() {
   return (
     <SafeAreaView style={s.page} edges={['top']}>
       <StatusBar style={dark ? 'light' : 'dark'} />
-      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 6 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
         <View style={[s.row, { justifyContent: 'space-between' }]}>
           <Text accessibilityRole="header" style={[s.title, { flex: 1 }]}>
             {title}
           </Text>
-          {tab !== 'menu' && (
-            <IconButton
-              icon={hidden ? 'eye-off-outline' : 'eye-outline'}
-              label={hidden ? 'Mostrar valores' : 'Ocultar valores'}
-              onPress={() => void toggleHidden()}
-              disabled={preferenceBusy}
-            />
-          )}
         </View>
         {tab !== 'menu' && (
           <MonthSelector
@@ -187,19 +205,33 @@ function Main() {
           kind={historyKind}
           onCategory={setCategoryFilter}
           onSearch={setSearch}
-          onKind={setHistoryKind}
+          onKind={(kind) => {
+            setHistoryKind(kind);
+            if (
+              categoryFilter !== null &&
+              (categoryFilter === ''
+                ? kind === 'DESPESA'
+                : !!kind && ledger.categories.find((c) => c.id === categoryFilter)?.kind !== kind)
+            )
+              setCategoryFilter(null);
+          }}
           onClear={clearFilters}
           onEdit={setEntry}
+          onAdd={() => addEntry()}
         />
       ) : (
-        <ScrollView key={tab} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          key={tab}
+          contentContainerStyle={[s.content, tab === 'home' && { paddingBottom: 96 }]}
+          keyboardShouldPersistTaps="handled"
+        >
           {store.loading && <ActivityIndicator size="large" color={palette.accent} />}
           {!!store.error && (
             <View style={s.card}>
               <Text style={s.heading}>Registros indisponíveis</Text>
               <Text style={s.text}>{store.error}</Text>
               <Text style={s.muted}>
-                Não desinstale o app. Você pode restaurar um backup no Menu.
+                Não desinstale o app. Você pode restaurar um backup em Ajustes.
               </Text>
               {tab !== 'menu' && (
                 <Button secondary title="Recuperar uma cópia" onPress={() => chooseTab('menu')} />
@@ -213,19 +245,23 @@ function Main() {
                   ledger={ledger}
                   month={month}
                   openHistory={openCategoryHistory}
-                  onAdd={() => {
-                    if (!store.busy) setEntry(null);
+                  onAdd={addEntry}
+                  onKindHistory={openKindHistory}
+                  onCharts={(kind = 'DESPESA') => {
+                    setChartsKind(kind);
+                    chooseTab('charts');
                   }}
-                  onCharts={() => chooseTab('charts')}
                 />
               )}
             </>
           )}
-          {tab === 'home' && (
-            <UpdateCard updates={updates} onOpenSettings={() => chooseTab('menu')} />
-          )}
           {tab === 'charts' && ledger && (
-            <Charts ledger={ledger} month={month} onCategory={openCategoryHistory} />
+            <Charts
+              ledger={ledger}
+              month={month}
+              initialKind={chartsKind}
+              onCategory={openCategoryHistory}
+            />
           )}
           {tab === 'menu' && (
             <MenuScreen
@@ -250,8 +286,8 @@ function Main() {
             flexWrap: 'wrap',
             alignItems: 'center',
             backgroundColor: palette.hero,
-            paddingHorizontal: 20,
-            paddingVertical: 12,
+            paddingHorizontal: 16,
+            paddingVertical: 8,
             gap: 8,
           }}
         >
@@ -280,11 +316,11 @@ function Main() {
           </Pressable>
         </View>
       )}
-      <SaveNotice event={savedEvent} message="Lançamento salvo." show={entry === undefined} />
+      <SaveNotice event={savedEvent} message={savedMessage} show={entry === undefined} />
       <BottomNavigation
         tab={tab}
         onSelect={chooseTab}
-        onAdd={() => setEntry(null)}
+        onAdd={() => addEntry()}
         addDisabled={!ledger || store.busy}
       />
       {entry !== undefined && ledger && (
@@ -292,14 +328,24 @@ function Main() {
           entry={entry}
           ledger={ledger}
           month={month}
+          initialKind={initialKind}
+          mutate={store.mutate}
           onClose={() => setEntry(undefined)}
-          onSave={async (value) => {
-            await store.mutate((l) => ({
-              ...l,
-              entries: l.entries.some((e) => e.id === value.id)
-                ? l.entries.map((e) => (e.id === value.id ? value : e))
-                : [...l.entries, value],
-            }));
+          onSave={async (value, recurrence) => {
+            const previous = store.ledger?.entries.find((item) => item.id === value.id);
+            const ending =
+              !recurrence.repeat &&
+              store.ledger?.recurrences.some(
+                (rule) => rule.id === previous?.recurrenceId && rule.active,
+              );
+            await store.mutate((l) => saveEntry(l, value, recurrence));
+            setSavedMessage(
+              ending
+                ? 'Recorrência encerrada. Histórico preservado.'
+                : value.kind === 'DESPESA'
+                  ? 'Despesa salva'
+                  : 'Receita salva',
+            );
             setSavedEvent((event) => event + 1);
           }}
           onDelete={deleteEntry}
@@ -321,13 +367,18 @@ function Main() {
         }}
       >
         <View
-          style={{ flex: 1, backgroundColor: '#17304F99', justifyContent: 'center', padding: 24 }}
+          style={{
+            flex: 1,
+            backgroundColor: `${palette.background}99`,
+            justifyContent: 'center',
+            padding: 24,
+          }}
         >
           <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={s.card}>
             <Text style={s.heading}>Restaurar este backup?</Text>
             <Text style={s.text}>
               {preview?.entries.length ?? 0} lançamentos e {preview?.categories.length ?? 0}{' '}
-              categorias.
+              categorias. {preview?.recurrences.length ?? 0} recorrências.
             </Text>
             <Text style={s.text}>
               Todos os registros atuais serão substituídos. Exporte um backup antes se quiser manter

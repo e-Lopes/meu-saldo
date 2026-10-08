@@ -1,9 +1,17 @@
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Category, Entry } from './finance';
+import { Category, civilDate, dateLabel, Entry, today } from './finance';
 import { useAppearance } from './Appearance';
 import { CategoryIcon } from './ui';
-import { spacing, typography } from './theme/tokens';
+
+export function historyDateLabel(date: string) {
+  const current = today();
+  if (date === current) return 'Hoje';
+  const yesterday = civilDate(current);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const previous = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+  return date === previous ? 'Ontem' : dateLabel(date);
+}
 
 export function LedgerRow({
   entry,
@@ -15,48 +23,84 @@ export function LedgerRow({
   onEdit: (entry: Entry) => void;
 }) {
   const { palette, s, money } = useAppearance();
-  const { width, fontScale } = useWindowDimensions();
-  const stacked = width < 400 || fontScale > 1.2;
-  const title = entry.description || category?.name || 'Receita';
-  const amount = (
-    <Text
-      style={[
-        typography.amount,
-        { fontSize: 17, color: entry.kind === 'RECEITA' ? palette.income : palette.expense },
-      ]}
-    >
-      {entry.kind === 'RECEITA' ? '+' : '−'} {money(entry.cents)}
-    </Text>
-  );
+  const { fontScale } = useWindowDimensions();
+  const income = entry.kind === 'RECEITA';
+  const type = income ? 'Receita' : 'Despesa';
+  const title = entry.description || category?.name || type;
+  const date = historyDateLabel(entry.date);
+  const symbol = income ? '+' : '−';
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Editar ${title}, ${entry.kind === 'RECEITA' ? 'receita' : 'despesa'}, ${money(entry.cents)}`}
+      accessibilityLabel={`Editar ${title}, ${type.toLocaleLowerCase('pt-BR')}, ${symbol} ${money(entry.cents)}, ${date}${entry.recurrenceId ? ', recorrente' : ''}`}
       onPress={() => onEdit(entry)}
-      style={({ pressed }) => [
-        s.card,
-        s.row,
-        { marginBottom: spacing.md, opacity: pressed ? 0.7 : 1 },
-      ]}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        minHeight: 72,
+        backgroundColor: pressed ? palette.selected : palette.background,
+        paddingVertical: 8,
+        gap: 8,
+        opacity: 1,
+      })}
     >
-      {category ? (
-        <CategoryIcon category={category} />
-      ) : (
-        <Ionicons name="trending-up" size={30} color={palette.income} />
-      )}
-      <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
-        <Text style={[s.text, { fontWeight: '600' }]}>{title}</Text>
-        {!!entry.description && (
-          <Text style={s.muted}>
-            {category?.name || 'Receita'}
-            {category?.archived ? ' · arquivada' : ''}
+      <CategoryIcon category={category ?? { color: 0, colorKey: 'teal', icon: 'savings' }} />
+      <View style={{ flex: 1, minWidth: 0, gap: 8 }}>
+        <View style={s.row}>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={[s.text, { fontWeight: '600', flexShrink: 1, minWidth: 0 }]}
+          >
+            {title}
           </Text>
-        )}
-        {!entry.description && category?.archived && <Text style={s.muted}>Arquivada</Text>}
-        {stacked && amount}
+          {!!entry.recurrenceId && (
+            <View
+              style={{
+                width: 22,
+                height: 22,
+                flexShrink: 0,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 6,
+                backgroundColor: palette.selected,
+              }}
+            >
+              <Ionicons name="repeat-outline" size={18} color={palette.accent} />
+            </View>
+          )}
+        </View>
+        <Text numberOfLines={1} ellipsizeMode="tail" style={s.muted}>
+          {category?.name ?? 'Sem categoria'}
+          {category?.archived ? ' · arquivada' : ''}
+        </Text>
       </View>
-      {!stacked && <View style={{ maxWidth: '45%', alignItems: 'flex-end' }}>{amount}</View>}
-      <Ionicons name="chevron-forward" color={palette.muted} size={20} />
+      <View
+        style={{
+          minWidth: 104,
+          flexShrink: 0,
+          maxWidth: fontScale > 1.2 ? '48%' : '42%',
+          alignItems: 'flex-end',
+        }}
+      >
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+          style={[
+            s.text,
+            {
+              textAlign: 'right',
+              fontWeight: '600',
+              fontVariant: ['tabular-nums'],
+              color: income ? palette.income : palette.expense,
+            },
+          ]}
+        >
+          {symbol} {money(entry.cents)}
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color={palette.muted} />
     </Pressable>
   );
 }

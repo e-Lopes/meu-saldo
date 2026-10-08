@@ -33,7 +33,9 @@ export function MenuRow({
         {
           minHeight: controlSize.touch,
           paddingVertical: spacing.sm,
-          opacity: disabled ? 0.4 : pressed ? 0.65 : 1,
+          backgroundColor: pressed || expanded ? palette.selected : 'transparent',
+          borderRadius: 8,
+          opacity: disabled ? 0.4 : 1,
         },
       ]}
     >

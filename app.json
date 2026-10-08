@@ -4,7 +4,7 @@
     "slug": "meu-saldo",
     "version": "1.0.1",
     "orientation": "portrait",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "platforms": ["android"],
     "android": {
       "package": "br.com.meusaldo",
@@ -30,6 +30,7 @@
         }
       ],
       "./plugins/withMeuSaldo"
-    ]
+    ],
+    "icon": "./assets/icon.png"
   }
 }

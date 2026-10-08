@@ -23,7 +23,10 @@ export function SaveNotice({
   if (!visible || !show) return null;
   return (
     <View style={{ backgroundColor: palette.selected, padding: spacing.md }}>
-      <Text style={{ color: palette.accent, textAlign: 'center', fontWeight: '600' }}>
+      <Text
+        accessibilityLiveRegion="polite"
+        style={{ color: palette.accent, textAlign: 'center', fontWeight: '600', fontSize: 16 }}
+      >
         {message}
       </Text>
     </View>

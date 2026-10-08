@@ -1,9 +1,7 @@
-import React from 'react';
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAppearance } from './Appearance';
-import { groups, Ledger, monthEntries, totals } from './finance';
-import { Button, Card, CategoryIcon, Empty, MetricCard, SectionHeader } from './ui';
+import { groups, Kind, Ledger, monthEntries, totals } from './finance';
+import { Card, CategoryIcon, Empty, MetricCard, SectionHeader } from './ui';
 import { spacing } from './theme/tokens';
 
 export function HomeScreen({
@@ -12,23 +10,26 @@ export function HomeScreen({
   openHistory,
   onAdd,
   onCharts,
+  onKindHistory,
 }: {
   ledger: Ledger;
   month: string;
-  openHistory: (category: string) => void;
-  onAdd: () => void;
-  onCharts: () => void;
+  openHistory: (category: string, kind?: Kind) => void;
+  onAdd: (kind?: Kind) => void;
+  onCharts: (kind?: Kind) => void;
+  onKindHistory: (kind: Kind) => void;
 }) {
-  const { palette, s, money, hidden } = useAppearance();
+  const { palette, s, money } = useAppearance();
   const entries = monthEntries(ledger, month);
   const summary = totals(entries);
   const grouped = groups(ledger, month);
+  const incomeGroups = groups(ledger, month, 'RECEITA');
   const { width, fontScale } = useWindowDimensions();
   const stacked = width < 360 || fontScale > 1.2;
   return (
     <>
-      <Card style={{ backgroundColor: palette.hero, padding: spacing.xl }}>
-        <Text style={{ color: palette.heroMuted, fontSize: 15 }}>Saldo do mês</Text>
+      <Card style={{ backgroundColor: palette.hero, padding: spacing.md, gap: spacing.sm }}>
+        <Text style={{ color: palette.heroMuted, fontSize: 16 }}>Saldo do mês</Text>
         <Text
           style={{
             color: palette.heroText,
@@ -39,60 +40,128 @@ export function HomeScreen({
         >
           {money(summary.balance)}
         </Text>
-        <Text style={{ color: palette.heroMuted, fontSize: 14 }}>Receitas menos despesas</Text>
+        <View style={s.wrap}>
+          <MetricCard
+            label="Receitas"
+            value={money(summary.income)}
+            tone="income"
+            stacked={stacked}
+            onPress={() => onKindHistory('RECEITA')}
+          />
+          <MetricCard
+            label="Despesas"
+            value={money(summary.expense)}
+            tone="expense"
+            stacked={stacked}
+            onPress={() => onKindHistory('DESPESA')}
+          />
+        </View>
       </Card>
       {entries.length > 0 ? (
         <>
-          <View style={s.wrap}>
-            <MetricCard
-              label="Receitas"
-              value={money(summary.income)}
-              tone="income"
-              stacked={stacked}
-            />
-            <MetricCard
-              label="Despesas"
-              value={money(summary.expense)}
-              tone="expense"
-              stacked={stacked}
-            />
-          </View>
-          {grouped.length > 0 && (
-            <>
-              <SectionHeader>Principais despesas</SectionHeader>
-              <Card>
-                {grouped.slice(0, 4).map((group, index) => (
-                  <React.Fragment key={group.category.id}>
-                    {index > 0 && <View style={s.divider} />}
+          <View
+            style={{
+              flexDirection: stacked ? 'column' : 'row',
+              alignItems: stacked ? 'stretch' : 'flex-start',
+              gap: spacing.sm,
+            }}
+          >
+            {(['RECEITA', 'DESPESA'] as const).map((kind) => {
+              const rows = kind === 'RECEITA' ? incomeGroups : grouped;
+              return (
+                <View key={kind} style={{ flex: 1, minWidth: 0, gap: spacing.sm }}>
+                  <SectionHeader>
+                    {kind === 'RECEITA' ? 'Principais receitas' : 'Principais despesas'}
+                  </SectionHeader>
+                  <Card style={{ padding: spacing.sm, gap: 0 }}>
+                    {rows.slice(0, 3).map((group, index) => (
+                      <View key={group.category.id || 'uncategorized'}>
+                        {index > 0 && (
+                          <View style={[s.divider, { opacity: 0.35, marginVertical: 8 }]} />
+                        )}
+                        <Pressable
+                          key={group.category.id || 'uncategorized'}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${group.category.name}: ${kind === 'RECEITA' ? 'receita' : 'despesa'} ${money(group.cents)}, ${group.percentage.toFixed(1).replace('.', ',')}% do total. Ver lançamentos.`}
+                          onPress={() => openHistory(group.category.id, kind)}
+                          style={({ pressed }) => ({
+                            minHeight: 64,
+                            gap: 8,
+                            paddingVertical: 8,
+                            backgroundColor: pressed ? palette.selected : 'transparent',
+                            borderRadius: 8,
+                          })}
+                        >
+                          <View style={[s.row, { minHeight: 48 * fontScale }]}>
+                            <CategoryIcon category={group.category} />
+                            <Text
+                              numberOfLines={2}
+                              ellipsizeMode="tail"
+                              style={[s.text, { flex: 1 }]}
+                            >
+                              {group.category.name}
+                            </Text>
+                          </View>
+                          <View
+                            style={[
+                              s.row,
+                              { alignItems: 'baseline', justifyContent: 'space-between' },
+                            ]}
+                          >
+                            <Text
+                              numberOfLines={1}
+                              adjustsFontSizeToFit
+                              minimumFontScale={0.8}
+                              style={[
+                                s.text,
+                                {
+                                  fontWeight: '700',
+                                  flex: 1,
+                                  minWidth: 0,
+                                  color: kind === 'RECEITA' ? palette.income : palette.expense,
+                                },
+                              ]}
+                            >
+                              {kind === 'RECEITA' ? '+' : '−'} {money(group.cents)}
+                            </Text>
+                            <Text
+                              numberOfLines={1}
+                              style={[
+                                s.muted,
+                                {
+                                  textAlign: 'right',
+                                  flexShrink: 0,
+                                  fontVariant: ['tabular-nums'],
+                                },
+                              ]}
+                            >
+                              {`${group.percentage.toFixed(1).replace('.', ',')}%`}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      </View>
+                    ))}
+                    {!rows.length && <Text style={s.muted}>Sem lançamentos</Text>}
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel={`${group.category.name}: ${money(group.cents)}. Ver lançamentos.`}
-                      onPress={() => openHistory(group.category.id)}
-                      style={({ pressed }) => [
-                        s.row,
-                        { minHeight: 48, opacity: pressed ? 0.65 : 1 },
-                      ]}
+                      onPress={() => onCharts(kind)}
+                      accessibilityLabel={
+                        kind === 'RECEITA' ? 'Ver todas as receitas' : 'Ver todas as despesas'
+                      }
+                      style={{
+                        minHeight: 48,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginTop: 8,
+                      }}
                     >
-                      <CategoryIcon category={group.category} size={36} />
-                      <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
-                        <Text style={s.text}>{group.category.name}</Text>
-                        <Text
-                          style={[s.text, { fontWeight: '600', fontVariant: ['tabular-nums'] }]}
-                        >
-                          {money(group.cents)}
-                        </Text>
-                      </View>
-                      {!hidden && !stacked && (
-                        <Text style={s.muted}>{group.percentage.toFixed(0)}%</Text>
-                      )}
-                      <Ionicons name="chevron-forward" size={18} color={palette.muted} />
+                      <Text style={{ color: palette.accent, fontSize: 16 }}>Ver todas</Text>
                     </Pressable>
-                  </React.Fragment>
-                ))}
-                <Button secondary title="Ver todos os gastos" onPress={onCharts} />
-              </Card>
-            </>
-          )}
+                  </Card>
+                </View>
+              );
+            })}
+          </View>
         </>
       ) : (
         <Empty
@@ -103,7 +172,7 @@ export function HomeScreen({
           }
           text="Registre uma receita ou despesa para acompanhar seu saldo."
           actionLabel="Adicionar lançamento"
-          onAction={onAdd}
+          onAction={() => onAdd()}
         />
       )}
     </>

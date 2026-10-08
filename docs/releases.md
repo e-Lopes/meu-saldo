@@ -11,7 +11,7 @@ O app utiliza o último endereço sem token, conta ou autenticação. O reposit�
 
 ## Como o atualizador funciona
 
-Ao entrar no app, uma consulta em segundo plano verifica uma nova versão, respeitando um intervalo de 6 horas. O botão no Menu ignora esse intervalo e verifica imediatamente. A consulta não transmite dados financeiros. Uma falha de rede não bloqueia lançamentos, histórico, gráficos ou backups.
+Ao entrar no app, uma consulta em segundo plano verifica uma nova versão, respeitando um intervalo de 6 horas. O botão nos Ajustes ignora esse intervalo e verifica imediatamente. A consulta não transmite dados financeiros. Uma falha de rede não bloqueia lançamentos, histórico, gráficos ou backups.
 
 Se `versionCode` for maior e a versão for compatível com o Android instalado, o app mostra a atualização. O usuário toca para baixar e pode cancelar o download. O APK só é oferecido ao instalador depois das verificações de tamanho, SHA-256, identificador, versão e assinatura. O aplicativo não aceita uma chave diferente da instalada.
 
@@ -78,7 +78,7 @@ Publicação imediata continua disponível exclusivamente em **Run workflow**, m
 
 1. Em **Actions → Gerar candidato Android → Run workflow**, escolha o commit/branch preparado e deixe a opção de publicação automática desmarcada. Nesse modo o workflow somente compila. Não há disparo por tags.
 2. Depois de concluir, baixe o artefato **meu-saldo-candidate**. Ele contém `meu-saldo.apk`, `update.json` e `release-notes.md`, com retenção de 30 dias. Anote o ID da execução mostrado no resumo e na URL de Actions (`.../actions/runs/ID`).
-3. Instale esse APK sobre uma versão release anterior, sem desinstalar. Confira registros, cadastre um lançamento, exporte um backup e restaure-o. Use dados fictícios na conferência; valide também tema, ocultação, fontes ampliadas e modo avião.
+3. Instale esse APK sobre uma versão release anterior, sem desinstalar. Confira registros, cadastre um lançamento, exporte um backup e restaure-o. Use dados fictícios na conferência; valide também tema escuro fixo, valores sempre visíveis, fontes ampliadas e modo avião.
 4. Abra **Actions → Publicar candidato Android → Run workflow**, informe o ID da execução escolhida e marque a confirmação de publicação. Sem essa confirmação, o job de publicação não é executado. A confirmação autoriza publicar o candidato; ela não declara que houve teste em aparelho físico. Registre nas notas as verificações realizadas e as que ainda estiverem pendentes.
 5. O workflow obtém o artefato da execução informada e faz checkout do commit que o produziu. Verifica novamente assinatura, identificador, versão, tamanho, SHA-256 e correspondência das notas. Não executa npm, prebuild ou Gradle e não regrava os arquivos do candidato.
 6. Publica exatamente `meu-saldo.apk` e `update.json` do candidato, usando as notas arquivadas nele. A tag `vX.Y.Z` é criada no commit da compilação; uma tag já existente só é aceita se apontar para esse mesmo commit. A release nasce como draft, recebe os assets e então se torna pública e latest.

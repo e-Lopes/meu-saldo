@@ -10,10 +10,11 @@ Organize suas finanças e acompanhe para onde vai o seu dinheiro. O Meu Saldo é
 
 - **Acompanhar o mês:** veja quanto recebeu, quanto gastou e o saldo restante.
 - **Registrar receitas e despesas:** adicione valores, datas e descrições; edite quando precisar.
-- **Organizar por categorias:** personalize nomes, cores e ícones para identificar seus gastos.
+- **Repetir lançamentos:** registre receitas e despesas semanais ou mensais automaticamente ao abrir o aplicativo.
+- **Organizar por categorias:** separe receitas e despesas em grupos com nomes, emojis ou ícones prontos; a cor é escolhida automaticamente.
 - **Entender seus hábitos:** consulte os gastos por categoria e compare receitas e despesas dos últimos seis meses.
 - **Encontrar um lançamento:** busque no histórico e filtre por tipo ou categoria.
-- **Personalizar a tela:** escolha o tema claro, escuro ou do celular e oculte os valores quando desejar.
+- **Consultar com clareza:** interface em tema escuro, com valores sempre visíveis.
 - **Guardar uma cópia:** salve seus registros em um arquivo para recuperá-los depois ou levar para outro celular.
 
 O saldo considera as receitas menos as despesas do mês escolhido. Valores de meses anteriores não são somados automaticamente.
@@ -31,11 +32,13 @@ Se já usa o aplicativo, instale a nova versão sobre a anterior, **sem desinsta
 
 ## Comece a usar
 
-Toque em **+** para registrar sua primeira receita ou despesa. Escolha a data e, para despesas, uma categoria. Você pode personalizar as categorias pelo **Menu**.
+Toque em **+** e escolha **Despesa** ou **Receita** para registrar um lançamento. Preencha tipo, valor, descrição opcional, categoria, data e recorrência. Receitas podem ficar sem categoria. Crie uma categoria diretamente no lançamento ou em **Ajustes → Organização → Categorias**: escolha o tipo, informe o nome e, se quiser, use um emoji ou um ícone pronto.
 
-No **Início**, acompanhe o resumo do mês. No **Histórico**, consulte, edite ou exclua lançamentos. Em **Gráficos**, descubra quais categorias concentram seus gastos e acompanhe a evolução dos últimos meses.
+Marque **Repetir lançamento** para escolher repetição mensal ou semanal. Confira a mensagem antes de salvar. Os registros vencidos são gerados ao abrir ou voltar ao aplicativo, mesmo sem internet; os próximos ainda não entram no saldo. Se o mês não tiver o dia escolhido, será usado o último dia do mês. Ao editar, escolha alterar só o lançamento atual ou também os próximos. Desmarcar a repetição e salvar apenas interrompe os próximos registros automáticos, mantendo o lançamento atual e o histórico.
 
-O botão de olho permite ocultar os valores nas telas de consulta. Ao abrir um lançamento para editar, seu valor fica visível.
+No **Resumo**, acompanhe o saldo, os totais e até três principais grupos de receitas e despesas em duas colunas, com valores e percentuais; toque nos totais ou categorias para ver seus lançamentos e use **Ver todas** para consultar os gráficos de cada tipo. No **Histórico**, consulte, edite ou exclua lançamentos. Em **Gráficos**, veja a distribuição por categoria e a evolução dos últimos seis meses na mesma tela.
+
+Os valores e percentuais ficam sempre visíveis. As categorias recebem uma das 12 cores da paleta, distribuídas de forma equilibrada e preservadas ao editar; a personalização da cor é opcional.
 
 ## Privacidade e cópias de segurança
 
@@ -43,13 +46,13 @@ Seus registros financeiros ficam armazenados no celular e não são enviados par
 
 A internet é usada para verificar e baixar atualizações pelo GitHub. Esses acessos não enviam suas receitas, despesas ou arquivos de cópia.
 
-Para guardar uma cópia, abra **Menu → Cópia de segurança → Salvar uma cópia**. Confira se o arquivo foi salvo e mantenha-o em um lugar seguro: ele contém seus registros e não tem proteção por senha.
+Para guardar uma cópia, abra **Ajustes → Dados e backup → Exportar backup**. Confira se o arquivo foi salvo e mantenha-o em um lugar seguro: ele contém seus registros e não tem proteção por senha.
 
 **Desinstalar o aplicativo ou limpar seus dados apaga os registros do celular.** Para recuperá-los, você precisará de uma cópia salva anteriormente. Ao restaurar uma cópia, os registros atuais são substituídos após sua confirmação.
 
 ## Atualizações e ajuda
 
-Quando houver uma nova versão disponível, o aplicativo mostra um aviso. Você também pode consultar **Menu → Atualizações**. O download precisa de internet; as funções financeiras continuam disponíveis sem conexão.
+Consulte **Ajustes → Sobre o app → Atualizações → Verificar atualizações** para buscar uma nova versão. O download precisa de internet; as funções financeiras continuam disponíveis sem conexão.
 
 Encontrou um problema ou tem uma sugestão? [Abra uma mensagem no projeto](https://github.com/e-Lopes/meu-saldo/issues). Descreva o que aconteceu e, se possível, informe o modelo do celular e a versão do aplicativo. Evite incluir dados financeiros pessoais.
 
@@ -60,3 +63,5 @@ Você pode compartilhar o [link de download](https://github.com/e-Lopes/meu-sald
 O Meu Saldo foi pensado para o acompanhamento das finanças pessoais e familiares, com registro manual e uso no próprio celular.
 
 Para contribuir com o código ou conhecer os detalhes técnicos, consulte a [documentação de desenvolvimento](docs/desenvolvimento.md).
+
+O ícone do aplicativo fica em [`assets/icon.png`](assets/icon.png), configurado em `app.json`. O plugin Android usa a mesma imagem na tela de abertura. Alterações no ícone exigem gerar e instalar um novo APK.

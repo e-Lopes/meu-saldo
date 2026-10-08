@@ -1,5 +1,7 @@
 # Estudo de arquitetura e design: Meu Saldo × Aristocat Mobile
 
+**Nota de atualização (08/10/2026):** este estudo é histórico. Recomendações de temas alternativos, ocultação, atalhos no Início e aviso de atualização foram substituídas pelas decisões atuais de Resumo, tema escuro fixo e Ajustes. O comportamento vigente está em [desenvolvimento](desenvolvimento.md).
+
 Data: 02/10/2026.
 
 Implementação posterior neste repositório: preparação automática de versões, geração/promoção separadas do candidato, extração de Início/atualizações/backup/navegação, tokens e paletas, métricas compartilhadas, filtros segmentados e linhas adaptáveis do Histórico. Consulte [releases](releases.md) e [validação manual](ui-validation.md). As recomendações abaixo preservam o diagnóstico feito antes dessas alterações.

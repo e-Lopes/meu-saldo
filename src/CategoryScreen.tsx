@@ -1,5 +1,5 @@
 import { useAppearance } from './Appearance';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -10,9 +10,21 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Category, categoryColor, colors, icons, id, Ledger, searchText } from './finance';
-import { Button, CategoryIcon, Chip, Field, IconButton } from './ui';
-import { MenuRow } from './MenuRow';
+import {
+  automaticCategoryColorKey,
+  categoryPalette,
+  categoryColor,
+  CategoryColorKey,
+  Category,
+  categoryUsed,
+  icons,
+  id,
+  Kind,
+  Ledger,
+  saveCategory,
+  searchText,
+} from './finance';
+import { Button, CategoryIcon, Chip, Field, IconButton, SegmentedControl } from './ui';
 import { errorMessage } from './useLedger';
 import { categoryIconOptions, isCategoryEmoji } from './categoryIcons';
 
@@ -20,76 +32,103 @@ export function CategoryScreen({
   ledger,
   mutate,
   onClose,
+  initialKind = 'DESPESA',
+  createOnly = false,
+  onCreated,
 }: {
   ledger: Ledger;
   mutate: (change: (l: Ledger) => Ledger) => Promise<void>;
   onClose: () => void;
+  initialKind?: Kind;
+  createOnly?: boolean;
+  onCreated?: (category: Category) => void;
 }) {
-  const { palette, s } = useAppearance();
-  const [editing, setEditing] = useState<Category | null | undefined>();
+  const { palette, s, dark } = useAppearance();
+  const [editing, setEditing] = useState<Category | null | undefined>(
+    createOnly ? null : undefined,
+  );
   const [name, setName] = useState('');
-  const [color, setColor] = useState(colors[0]);
+  const [kind, setKind] = useState<Kind>(initialKind);
+  const [listKind, setListKind] = useState<Kind>(initialKind);
+  const draftId = useRef(id());
+  const [customColorKey, setCustomColorKey] = useState<CategoryColorKey>();
+  const [showColors, setShowColors] = useState(false);
+  const colorKey =
+    customColorKey ??
+    editing?.colorKey ??
+    automaticCategoryColorKey(ledger.categories, draftId.current);
+  const color = Number(`0xff${categoryColor({ color: 0, colorKey }).slice(1)}`);
+  const used = !!editing && categoryUsed(ledger, editing.id);
   const [icon, setIcon] = useState(icons[0]);
   const [emoji, setEmoji] = useState('');
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const [error, setError] = useState('');
+  const [nameError, setNameError] = useState('');
   const [search, setSearch] = useState('');
   const [showArchived, setShowArchived] = useState(false);
-  const [customize, setCustomize] = useState(false);
-  const [options, setOptions] = useState(false);
   const changed =
     name !== (editing?.name ?? '') ||
-    color !== (editing?.color ?? colors[0]) ||
+    (!!editing && kind !== editing.kind) ||
+    (!!customColorKey && customColorKey !== editing?.colorKey) ||
     icon !== (editing?.icon ?? icons[0]) ||
     emoji !== (editing?.icon.startsWith('emoji:') ? editing.icon.slice(6) : '');
   const counts = new Map<string, number>();
   for (const entry of ledger.entries)
     if (entry.categoryId) counts.set(entry.categoryId, (counts.get(entry.categoryId) ?? 0) + 1);
   const matching = ledger.categories
-    .filter((c) => searchText(c.name).includes(searchText(search)))
+    .filter((c) => c.kind === listKind && searchText(c.name).includes(searchText(search)))
     .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
   const visibleCategories = matching
     .filter((c) => !c.archived || showArchived || !!search.trim())
     .sort((a, b) => Number(a.archived) - Number(b.archived));
   function edit(c: Category | null) {
+    draftId.current = c?.id ?? id();
+    setCustomColorKey(undefined);
+    setShowColors(false);
+    setNameError('');
     setEditing(c);
     setName(c?.name ?? '');
-    setColor(c?.color ?? colors[0]);
+    setKind(c?.kind ?? listKind);
     setIcon(c?.icon ?? icons[0]);
     setEmoji(c?.icon.startsWith('emoji:') ? c.icon.slice(6) : '');
     setError('');
-    setCustomize(false);
-    setOptions(false);
   }
   async function save() {
-    if (busy) return;
+    if (busyRef.current) return;
+    if (!name.trim()) {
+      setNameError('Informe o nome da categoria.');
+      return;
+    }
     try {
       if (!name.trim()) throw new Error('Informe o nome da categoria.');
       if (icon.startsWith('emoji:') && !isCategoryEmoji(emoji.trim()))
         throw new Error('Escolha um único emoji para a categoria.');
       setBusy(true);
+      busyRef.current = true;
       const category = {
-        id: editing?.id ?? id(),
+        id: editing?.id ?? draftId.current,
+        kind,
         name: name.trim(),
         color,
+        colorKey,
         icon: icon.startsWith('emoji:') ? `emoji:${emoji.trim()}` : icon,
         archived: editing?.archived ?? false,
       };
-      await mutate((l) => ({
-        ...l,
-        categories: editing
-          ? l.categories.map((c) => (c.id === category.id ? category : c))
-          : [...l.categories, category],
-      }));
-      setEditing(undefined);
+      await mutate((l) => saveCategory(l, category));
+      onCreated?.(category);
+      if (createOnly) onClose();
+      else setEditing(undefined);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
   async function run(change: (l: Ledger) => Ledger) {
-    if (busy) return;
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     try {
       await mutate(change);
@@ -98,15 +137,16 @@ export function CategoryScreen({
       Alert.alert('Alteração não salva', errorMessage(e));
       return false;
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
   function remove(c: Category) {
-    const used = ledger.entries.some((e) => e.categoryId === c.id);
+    const used = categoryUsed(ledger, c.id);
     Alert.alert(
       used ? 'Arquivar categoria?' : 'Excluir categoria?',
       (used
-        ? 'Ela ficará disponível no histórico. Novos lançamentos usarão as categorias ativas.'
+        ? 'O histórico e as recorrências existentes serão preservados.'
         : 'Esta categoria não possui lançamentos.') +
         (changed ? ' As alterações ainda não salvas serão descartadas.' : ''),
       [
@@ -117,7 +157,7 @@ export function CategoryScreen({
           onPress: async () => {
             const saved = await run((l) => ({
               ...l,
-              categories: used
+              categories: categoryUsed(l, c.id)
                 ? l.categories.map((v) => (v.id === c.id ? { ...v, archived: true } : v))
                 : l.categories.filter((v) => v.id !== c.id),
             }));
@@ -144,15 +184,19 @@ export function CategoryScreen({
       ]);
     else void activate();
   }
+  const finishEditing = () => {
+    if (createOnly) onClose();
+    else setEditing(undefined);
+  };
   const close = () => {
     if (busy) return;
     if (editing !== undefined) {
       if (changed)
         Alert.alert('Descartar alterações?', 'As alterações da categoria ainda não foram salvas.', [
           { text: 'Continuar editando', style: 'cancel' },
-          { text: 'Descartar', style: 'destructive', onPress: () => setEditing(undefined) },
+          { text: 'Descartar', style: 'destructive', onPress: finishEditing },
         ]);
-      else setEditing(undefined);
+      else finishEditing();
     } else onClose();
   };
   return (
@@ -177,6 +221,15 @@ export function CategoryScreen({
           <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
             {editing === undefined ? (
               <>
+                <SegmentedControl
+                  label="Tipo de categoria"
+                  value={listKind}
+                  onChange={setListKind}
+                  options={[
+                    { value: 'DESPESA', label: 'Despesas' },
+                    { value: 'RECEITA', label: 'Receitas' },
+                  ]}
+                />
                 <Button title="Criar categoria" onPress={() => edit(null)} disabled={busy} />
                 <Field
                   label="Buscar categoria"
@@ -191,7 +244,7 @@ export function CategoryScreen({
                   <Text style={s.muted}>
                     {search
                       ? 'Nenhuma categoria ativa encontrada.'
-                      : 'Crie uma categoria para organizar suas despesas.'}
+                      : 'Crie uma categoria para organizar seus lançamentos.'}
                   </Text>
                 )}
                 {matching.some((c) => c.archived) && (
@@ -215,7 +268,11 @@ export function CategoryScreen({
                         disabled={busy}
                         style={({ pressed }) => [
                           s.row,
-                          { minHeight: 48, opacity: pressed ? 0.65 : 1 },
+                          {
+                            minHeight: 48,
+                            borderRadius: 8,
+                            backgroundColor: pressed ? palette.selected : 'transparent',
+                          },
                         ]}
                       >
                         <CategoryIcon category={c} />
@@ -234,91 +291,100 @@ export function CategoryScreen({
               </>
             ) : (
               <>
+                <Text style={s.label}>Tipo da categoria</Text>
+                <SegmentedControl
+                  label="Tipo da categoria"
+                  value={kind}
+                  onChange={setKind}
+                  disabled={busy || used}
+                  options={[
+                    { value: 'DESPESA', label: 'Despesa' },
+                    { value: 'RECEITA', label: 'Receita' },
+                  ]}
+                />
+                {used && (
+                  <Text style={s.muted}>
+                    O tipo não pode mudar porque esta categoria tem lançamentos ou recorrências
+                    vinculadas.
+                  </Text>
+                )}
                 <Field
                   label="Nome"
                   value={name}
-                  onChangeText={setName}
+                  onChangeText={(value) => {
+                    setName(value);
+                    setNameError('');
+                  }}
+                  error={nameError}
                   maxLength={60}
                   placeholder="Nome da categoria"
                   editable={!busy}
-                  autoFocus
                 />
-                <MenuRow
-                  icon="color-palette-outline"
-                  title="Cor e ícone"
+                <Field
+                  label="Usar emoji"
+                  helper="Cole um emoji ou escolha no teclado, como 🐶, 🍕 ou ✈️."
+                  placeholder="Seu emoji"
+                  value={emoji}
+                  editable={!busy}
+                  maxLength={32}
+                  autoCorrect={false}
+                  onChangeText={(value) => {
+                    setEmoji(value);
+                    setIcon(value ? `emoji:${value.trim()}` : icons[0]);
+                    setError('');
+                  }}
+                  error={
+                    emoji && !isCategoryEmoji(emoji.trim()) ? 'Informe um único emoji.' : undefined
+                  }
+                />
+                <Button
+                  secondary
+                  title={showColors ? 'Fechar cores' : 'Personalizar cor (opcional)'}
+                  expanded={showColors}
+                  onPress={() => setShowColors((value) => !value)}
                   disabled={busy}
-                  expanded={customize}
-                  onPress={() => setCustomize((value) => !value)}
                 />
-                {customize && (
-                  <>
-                    <Text style={s.label}>Cor</Text>
-                    <View style={s.wrap}>
-                      {[...new Set([...colors, color])].map((v) => (
-                        <Pressable
-                          key={v}
-                          onPress={() => setColor(v)}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Cor ${['Laranja', 'Amarelo', 'Verde água', 'Roxo', 'Azul', 'Rosa', 'Verde'][colors.indexOf(v)] ?? categoryColor(v)}`}
-                          accessibilityState={{ selected: color === v }}
-                          disabled={busy}
+                {showColors && (
+                  <View style={s.wrap}>
+                    {categoryPalette.map((family) => (
+                      <Chip
+                        key={family.key}
+                        label={`Cor ${family.name}`}
+                        selected={colorKey === family.key}
+                        disabled={busy}
+                        onPress={() => setCustomColorKey(family.key)}
+                      >
+                        <View
                           style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 24,
-                            backgroundColor: categoryColor(v),
-                            borderWidth: color === v ? 4 : 0,
-                            borderColor: palette.navy,
+                            width: 24,
+                            height: 24,
+                            borderRadius: 12,
+                            backgroundColor: dark ? family.dark : family.light,
                           }}
                         />
-                      ))}
-                    </View>
-                    <Text style={s.label}>Ícone</Text>
-                    <View style={s.wrap}>
-                      {categoryIconOptions.map(({ value: v, label }) => (
-                        <Chip
-                          key={v}
-                          label={`Ícone ${label}`}
-                          disabled={busy}
-                          selected={icon === v}
-                          onPress={() => setIcon(v)}
-                        >
-                          <CategoryIcon category={{ icon: v, color }} size={30} />
-                        </Chip>
-                      ))}
-                    </View>
-                    <Field
-                      label="Usar emoji"
-                      helper="Cole um emoji ou escolha no teclado, como 🐶, 🍕 ou ✈️."
-                      placeholder="Seu emoji"
-                      value={emoji}
-                      editable={!busy}
-                      maxLength={32}
-                      autoCorrect={false}
-                      onChangeText={(value) => {
-                        setEmoji(value);
-                        setIcon(value ? `emoji:${value.trim()}` : icons[0]);
+                        {family.name}
+                      </Chip>
+                    ))}
+                  </View>
+                )}
+                <Text style={s.label}>Ícones prontos</Text>
+                <View style={s.wrap}>
+                  {categoryIconOptions.map(({ value: v, label }) => (
+                    <Chip
+                      key={v}
+                      label={`Ícone ${label}`}
+                      disabled={busy}
+                      selected={icon === v}
+                      onPress={() => {
+                        setIcon(v);
+                        setEmoji('');
                         setError('');
                       }}
-                      error={
-                        emoji && !isCategoryEmoji(emoji.trim())
-                          ? 'Informe um único emoji.'
-                          : undefined
-                      }
-                    />
-                    {isCategoryEmoji(emoji.trim()) && (
-                      <Chip
-                        label={`Usar emoji ${emoji.trim()}`}
-                        selected={icon.startsWith('emoji:')}
-                        disabled={busy}
-                        onPress={() => setIcon(`emoji:${emoji.trim()}`)}
-                      >
-                        <CategoryIcon category={{ icon: `emoji:${emoji.trim()}`, color }} />
-                        Usar este emoji
-                      </Chip>
-                    )}
-                  </>
-                )}
+                    >
+                      <CategoryIcon category={{ icon: v, color, colorKey }} />
+                    </Chip>
+                  ))}
+                </View>
                 {!!error && (
                   <Text accessibilityRole="alert" style={{ color: palette.expense }}>
                     {error}
@@ -327,33 +393,25 @@ export function CategoryScreen({
 
                 {editing && (
                   <>
-                    <MenuRow
-                      icon="ellipsis-horizontal"
-                      title="Opções da categoria"
-                      disabled={busy}
-                      expanded={options}
-                      onPress={() => setOptions((value) => !value)}
-                    />
-                    {options &&
-                      (editing.archived ? (
-                        <Button
-                          secondary
-                          title="Reativar categoria"
-                          disabled={busy}
-                          onPress={() => reactivate(editing)}
-                        />
-                      ) : (
-                        <Button
-                          danger
-                          title={
-                            ledger.entries.some((entry) => entry.categoryId === editing.id)
-                              ? 'Arquivar categoria'
-                              : 'Excluir categoria'
-                          }
-                          disabled={busy}
-                          onPress={() => remove(editing)}
-                        />
-                      ))}
+                    {editing.archived ? (
+                      <Button
+                        secondary
+                        title="Reativar categoria"
+                        disabled={busy}
+                        onPress={() => reactivate(editing)}
+                      />
+                    ) : (
+                      <Button
+                        danger
+                        title={
+                          categoryUsed(ledger, editing.id)
+                            ? 'Arquivar categoria'
+                            : 'Excluir categoria'
+                        }
+                        disabled={busy}
+                        onPress={() => remove(editing)}
+                      />
+                    )}
                   </>
                 )}
               </>
