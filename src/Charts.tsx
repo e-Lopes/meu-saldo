@@ -128,7 +128,6 @@ function CategoryChart({
                 fontSize={17}
                 fontWeight="700"
               >
-                {kind === 'DESPESA' ? '−' : '+'}{' '}
                 {money(kind === 'DESPESA' ? summary.expense : summary.income)}
               </SvgText>
             </Svg>
