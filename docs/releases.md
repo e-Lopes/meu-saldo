@@ -61,18 +61,18 @@ Execute `npm run validate`, faça commit dos arquivos e envie o código. A vers�
 
 ## Geração automática de candidatos
 
-O envio à `main` de alterações em `app.json`, `release/notes.md`, no workflow de geração ou em `scripts/check_release.py` dispara a geração do candidato, sem publicação. A consulta inicial pula versões já publicadas com APK e manifesto completos; drafts, pré-releases incompletas e falhas de consulta não são tratados como versões disponíveis para sobrescrita.
+O envio à `main` de alterações em `app.json`, `release/notes.md`, no workflow de geração ou em `scripts/check_release.py` dispara a geração e publicação automática após as verificações técnicas. A consulta inicial pula versões já publicadas com APK e manifesto completos; drafts, pré-releases incompletas e falhas de consulta não são tratados como versões disponíveis para sobrescrita.
 
 Para cada entrega:
 
 1. Prepare uma versão ainda não publicada com `npm run release:prepare -- X.Y.Z`.
 2. Complete `release/notes.md`, registrando validações realizadas e pendentes.
 3. Faça commit das mudanças e push para `main`.
-4. Acompanhe o workflow **Gerar candidato Android**. Ele verifica tipos, formatação, cálculos, backups e scripts, compila em Linux com a assinatura original e arquiva o candidato. Confira no celular e publique pelo workflow **Publicar candidato Android**, conforme o roteiro abaixo.
+4. Acompanhe o workflow **Gerar candidato Android**. Ele verifica tipos, formatação, cálculos, backups e scripts, compila em Linux com a assinatura original, arquiva o candidato, verifica novamente o APK e publica a release como `latest`. A conferência em aparelho físico deve ser registrada separadamente; a automação não declara que ela aconteceu.
 
-Na publicação, o script cria a tag no commit compilado e marca a release como `latest`. Isso permite que o atualizador do celular encontre também a numeração reiniciada 1.0.0. Não há recompilação na publicação nem substituição de releases existentes. O `versionCode` precisa superar todas as releases públicas. Um push não atualiza o APK publicado.
+Na publicação, o script cria a tag no commit compilado e marca a release como `latest`. Isso permite que o atualizador do celular encontre também a numeração reiniciada 1.0.0. Não há recompilação na publicação nem substituição de releases existentes. O `versionCode` precisa superar todas as releases públicas. Um push com uma nova versão preparada publica o novo APK; versões já publicadas são ignoradas.
 
-Publicação imediata continua disponível exclusivamente em **Run workflow**, marcando **Publicar automaticamente depois de compilar e verificar**. A opção fica desmarcada por padrão. Nesse caso, a automação publica após as verificações técnicas; ela não declara que houve teste no celular.
+Pushes à `main` publicam automaticamente uma versão ainda não publicada após as verificações técnicas. Em **Run workflow**, marque **Publicar automaticamente depois de compilar e verificar** para publicar, ou deixe desmarcado para gerar apenas um candidato. A automação não declara que houve teste no celular.
 
 ## Alternativa manual: gerar candidato → conferir no celular → publicar
 

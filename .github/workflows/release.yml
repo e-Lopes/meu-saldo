@@ -102,7 +102,7 @@ jobs:
           include-hidden-files: true
       - name: Identificar o candidato
         env:
-          AUTO_PUBLISH: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
+          AUTO_PUBLISH: ${{ github.event_name == 'push' || inputs.publish }}
         run: |
           echo "Candidato: execução $GITHUB_RUN_ID, commit $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           if [ "$AUTO_PUBLISH" = "true" ]; then
@@ -111,14 +111,14 @@ jobs:
             echo 'Baixe meu-saldo-candidate, confira o APK no celular e publique escolhendo este ID no workflow Publicar candidato Android.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Conferir novamente o APK antes da publicação automática
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        if: github.event_name == 'push' || inputs.publish
         run: |
           python scripts/prepare_release.py --verify-only \
             --apk .dist/release/meu-saldo.apk --output .dist/release \
             --aapt "$ANDROID_HOME/build-tools/36.0.0/aapt" \
             --apksigner "$ANDROID_HOME/build-tools/36.0.0/apksigner"
       - name: Publicar automaticamente o mesmo APK e marcar como latest
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        if: github.event_name == 'push' || inputs.publish
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
