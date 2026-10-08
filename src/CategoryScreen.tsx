@@ -33,6 +33,7 @@ export function CategoryScreen({
   mutate,
   onClose,
   initialKind = 'DESPESA',
+  initialCategory,
   createOnly = false,
   onCreated,
 }: {
@@ -40,17 +41,18 @@ export function CategoryScreen({
   mutate: (change: (l: Ledger) => Ledger) => Promise<void>;
   onClose: () => void;
   initialKind?: Kind;
+  initialCategory?: Category;
   createOnly?: boolean;
   onCreated?: (category: Category) => void;
 }) {
   const { palette, s, dark } = useAppearance();
   const [editing, setEditing] = useState<Category | null | undefined>(
-    createOnly ? null : undefined,
+    initialCategory ?? (createOnly ? null : undefined),
   );
-  const [name, setName] = useState('');
-  const [kind, setKind] = useState<Kind>(initialKind);
+  const [name, setName] = useState(initialCategory?.name ?? '');
+  const [kind, setKind] = useState<Kind>(initialCategory?.kind ?? initialKind);
   const [listKind, setListKind] = useState<Kind>(initialKind);
-  const draftId = useRef(id());
+  const draftId = useRef(initialCategory?.id ?? id());
   const [customColorKey, setCustomColorKey] = useState<CategoryColorKey>();
   const [showColors, setShowColors] = useState(false);
   const colorKey =
@@ -59,8 +61,10 @@ export function CategoryScreen({
     automaticCategoryColorKey(ledger.categories, draftId.current);
   const color = Number(`0xff${categoryColor({ color: 0, colorKey }).slice(1)}`);
   const used = !!editing && categoryUsed(ledger, editing.id);
-  const [icon, setIcon] = useState(icons[0]);
-  const [emoji, setEmoji] = useState('');
+  const [icon, setIcon] = useState(initialCategory?.icon ?? icons[0]);
+  const [emoji, setEmoji] = useState(
+    initialCategory?.icon.startsWith('emoji:') ? initialCategory.icon.slice(6) : '',
+  );
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const [error, setError] = useState('');
@@ -322,6 +326,7 @@ export function CategoryScreen({
                 />
                 <Field
                   label="Usar emoji"
+                  emoji
                   helper="Cole um emoji ou escolha no teclado, como 🐶, 🍕 ou ✈️."
                   placeholder="Seu emoji"
                   value={emoji}

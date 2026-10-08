@@ -299,6 +299,56 @@ test('entry editing keeps deletion behind more actions and exposes a single cate
   assert.equal(labels[1], 'Descrição (opcional)');
 });
 
+test('expanding entry actions scrolls after layout once and collapsing does not scroll', () => {
+  const data = seed();
+  const app = form({ ledger: data, entry: data.entries[0] });
+  let tree = app.render();
+  const scroll = nodes(tree).find((node) => node.type === 'ScrollView' && node.props.ref).props;
+  const calls = [];
+  scroll.ref.current = { scrollToEnd: (options) => calls.push(options.animated) };
+  scroll.onContentSizeChange();
+  assert.equal(calls.length, 0);
+  const actions = nodes(tree).find(
+    (node) => node.type === 'Button' && node.props.expanded === false,
+  ).props;
+  actions.onPress();
+  assert.equal(calls.length, 0, 'Wait for the expanded content to be laid out');
+  tree = app.render();
+  assert.ok(nodes(tree).some((node) => node.type === 'Button' && node.props.expanded === true));
+  scroll.onContentSizeChange();
+  scroll.onContentSizeChange();
+  assert.deepEqual(calls, [true]);
+  nodes(tree)
+    .find((node) => node.type === 'Button' && node.props.expanded === true)
+    .props.onPress();
+  app.render();
+  scroll.onContentSizeChange();
+  assert.deepEqual(calls, [true]);
+});
+
+test('category picker opens the selected category for editing and offers filled action buttons', () => {
+  const data = seed();
+  const app = form({ ledger: data, entry: data.entries[0] });
+  let tree = app.render();
+  const create = nodes(tree)
+    .filter((node) => node.type === 'Button' && node.props.title === 'Criar categoria')
+    .at(-1).props;
+  const edit = find(tree, 'Button', 'title', 'Editar categoria');
+  assert.equal(create.secondary, undefined);
+  assert.equal(edit.secondary, undefined);
+  assert.equal(edit.disabled, false);
+  edit.onPress();
+  tree = app.render();
+  const category = data.categories.find((value) => value.id === data.entries[0].categoryId);
+  const screen = find(tree, 'CategoryScreen', 'initialCategory', category);
+  assert.equal(screen.createOnly, true);
+  assert.equal(find(tree, 'Modal', 'transparent', true).visible, false);
+  screen.onClose();
+  assert.ok(!nodes(app.render()).some((node) => node.type === 'CategoryScreen'));
+  const income = form();
+  assert.equal(find(income.render(), 'Button', 'title', 'Editar categoria').disabled, true);
+});
+
 test('amount validation preserves input and values are always visible', () => {
   const data = seed();
   const app = form({ ledger: data, entry: data.entries[0] });

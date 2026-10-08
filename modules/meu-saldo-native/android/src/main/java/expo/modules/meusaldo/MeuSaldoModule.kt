@@ -38,6 +38,14 @@ class MeuSaldoModule : Module() {
 
   override fun definition() = ModuleDefinition {
     Name("MeuSaldoNative")
+    View(CategoryEmojiView::class) {
+      Events("onChangeText")
+      Prop("value") { view: CategoryEmojiView, value: String -> view.setValue(value) }
+      Prop("editable") { view: CategoryEmojiView, value: Boolean -> view.setEditable(value) }
+      Prop("input") { view: CategoryEmojiView, value: Boolean -> view.setInput(value) }
+      Prop("textColor") { view: CategoryEmojiView, value: Int -> view.setTextColor(value) }
+      Prop("fontSize") { view: CategoryEmojiView, value: Float -> view.setFontSize(value) }
+    }
     Events("updateProgress")
     Constant("versionName") { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "" }
     AsyncFunction("getPreferences") {

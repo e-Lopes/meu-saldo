@@ -11,6 +11,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { CategoryEmoji } from './CategoryEmoji';
 import { categoryIconOptions } from './categoryIcons';
 import { Category, categoryColor, monthName, today } from './finance';
 
@@ -277,6 +278,7 @@ export function CategoryIcon({
       style={{
         width: size,
         height: size,
+        flexShrink: 0,
         backgroundColor: palette.card,
         borderRadius: 8,
         alignItems: 'center',
@@ -291,9 +293,11 @@ export function CategoryIcon({
         ]}
       />
       {category.icon.startsWith('emoji:') ? (
-        <Text allowFontScaling={false} style={{ fontSize: size * 0.5 }}>
-          {category.icon.slice(6)}
-        </Text>
+        <CategoryEmoji
+          value={category.icon.slice(6)}
+          size={size * 0.5}
+          style={{ width: size, height: size }}
+        />
       ) : (
         <Ionicons
           name={
@@ -313,6 +317,7 @@ export function Field({
   helper,
   inputRef,
   hideLabel = false,
+  emoji = false,
   ...props
 }: TextInputProps & {
   label: string;
@@ -320,20 +325,41 @@ export function Field({
   helper?: string;
   inputRef?: React.Ref<TextInput>;
   hideLabel?: boolean;
+  emoji?: boolean;
 }) {
   const { palette, s } = useAppearance();
   return (
     <View>
       {!hideLabel && <Text style={s.label}>{label}</Text>}
-      <TextInput
-        ref={inputRef}
-        accessibilityLabel={label}
-        placeholderTextColor={palette.muted}
-        selectionColor={palette.accent}
-        cursorColor={palette.accent}
-        {...props}
-        style={[s.input, error ? { borderColor: palette.expense } : null, props.style]}
-      />
+      {emoji ? (
+        <View
+          style={[
+            s.input,
+            error ? { borderColor: palette.expense } : null,
+            { justifyContent: 'center' },
+          ]}
+        >
+          <CategoryEmoji
+            input
+            value={props.value ?? ''}
+            size={22}
+            color={palette.navy}
+            editable={props.editable}
+            onChangeText={props.onChangeText}
+            style={{ height: 40, width: '100%' }}
+          />
+        </View>
+      ) : (
+        <TextInput
+          ref={inputRef}
+          accessibilityLabel={label}
+          placeholderTextColor={palette.muted}
+          selectionColor={palette.accent}
+          cursorColor={palette.accent}
+          {...props}
+          style={[s.input, error ? { borderColor: palette.expense } : null, props.style]}
+        />
+      )}
       {!!error && (
         <Text accessibilityRole="alert" style={[s.muted, { color: palette.expense, marginTop: 8 }]}>
           {error}

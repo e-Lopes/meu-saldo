@@ -69,6 +69,7 @@ export function EntryForm({
   const [repeat, setRepeat] = useState(rule?.active ?? false);
   const [frequency, setFrequency] = useState<Frequency>(rule?.frequency ?? 'monthly');
   const [createCategory, setCreateCategory] = useState(false);
+  const [editCategory, setEditCategory] = useState<Category | null>(null);
   const [amount, setAmount] = useState(
     initial ? (initial.cents / 100).toFixed(2).replace('.', ',') : '',
   );
@@ -77,6 +78,7 @@ export function EntryForm({
   const [date, setDate] = useState(initialDate);
   const amountRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const revealActions = useRef(false);
   const [amountError, setAmountError] = useState('');
   const [categoryError, setCategoryError] = useState('');
   const categoryPosition = useRef(0);
@@ -270,6 +272,12 @@ export function EntryForm({
             </Text>
           </View>
           <ScrollView
+            onContentSizeChange={() => {
+              if (revealActions.current) {
+                revealActions.current = false;
+                scrollRef.current?.scrollToEnd({ animated: true });
+              }
+            }}
             ref={scrollRef}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -455,7 +463,12 @@ export function EntryForm({
                 <Button
                   secondary
                   title="Mais ações"
-                  onPress={() => setShowActions((value) => !value)}
+                  expanded={showActions}
+                  onPress={() => {
+                    revealActions.current = !showActions;
+                    Keyboard.dismiss();
+                    setShowActions(!showActions);
+                  }}
                   disabled={saving}
                 />
                 {showActions && (
@@ -589,7 +602,6 @@ export function EntryForm({
                   )
                 )}
                 <Button
-                  secondary
                   title="Criar categoria"
                   disabled={saving}
                   onPress={() => {
@@ -598,19 +610,33 @@ export function EntryForm({
                     setCreateCategory(true);
                   }}
                 />
+                <Button
+                  title="Editar categoria"
+                  disabled={saving || !selectedCategory}
+                  onPress={() => {
+                    if (!selectedCategory) return;
+                    Keyboard.dismiss();
+                    setCategoryPicker(false);
+                    setEditCategory(selectedCategory);
+                  }}
+                />
               </Card>
             </ScrollView>
           </SafeAreaView>
         </View>
       </Modal>
       {dialog}
-      {createCategory && (
+      {(createCategory || editCategory) && (
         <CategoryScreen
           ledger={ledger}
           mutate={mutate}
           initialKind={kind}
+          initialCategory={editCategory ?? undefined}
           createOnly
-          onClose={() => setCreateCategory(false)}
+          onClose={() => {
+            setCreateCategory(false);
+            setEditCategory(null);
+          }}
           onCreated={(category) => {
             if (category.kind === kind) {
               setCategoryId(category.id);

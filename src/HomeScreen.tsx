@@ -1,17 +1,6 @@
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useAppearance } from './Appearance';
-import {
-  groups,
-  Kind,
-  Ledger,
-  monthEntries,
-  totals,
-  upcomingOccurrences,
-  monthlyComparison,
-  dateLabel,
-  shiftMonth,
-  monthName,
-} from './finance';
+import { groups, Kind, Ledger, monthEntries, totals } from './finance';
 import { Card, CategoryIcon, Empty, MetricCard, SectionHeader } from './ui';
 import { spacing } from './theme/tokens';
 
@@ -36,8 +25,6 @@ export function HomeScreen({
   const grouped = groups(ledger, month);
   const incomeGroups = groups(ledger, month, 'RECEITA');
   const { width, fontScale } = useWindowDimensions();
-  const comparison = monthlyComparison(ledger, month);
-  const upcoming = upcomingOccurrences(ledger);
   const stacked = width < 360 || fontScale > 1.2;
   return (
     <>
@@ -188,56 +175,6 @@ export function HomeScreen({
           onAction={() => onAdd()}
         />
       )}
-      <Card>
-        <Text style={s.heading}>Em relação a {monthName(shiftMonth(month, -1))}</Text>
-        <Text style={s.muted}>Diferença de receitas e despesas no mês selecionado.</Text>
-        {(['income', 'expense'] as const).map((key) => (
-          <View key={key} style={[s.row, { justifyContent: 'space-between' }]}>
-            <Text style={s.text}>{key === 'income' ? 'Receitas' : 'Despesas'}</Text>
-            <Text style={s.text}>
-              {comparison[key] > 0 ? '+' : comparison[key] < 0 ? '−' : ''}{' '}
-              {money(Math.abs(comparison[key]))}
-            </Text>
-          </View>
-        ))}
-      </Card>
-      <Card>
-        <Text style={s.heading}>Próximas recorrências</Text>
-        <Text style={s.muted}>Próximos sete dias. Estes valores ainda não entram no saldo.</Text>
-        {upcoming.length === 0 ? (
-          <Text style={s.muted}>Nenhuma recorrência prevista para os próximos sete dias.</Text>
-        ) : (
-          upcoming.map((item) => (
-            <View key={item.id} style={[s.row, { alignItems: 'center' }]}>
-              <CategoryIcon
-                category={
-                  ledger.categories.find((c) => c.id === item.categoryId) ?? {
-                    icon: 'savings',
-                    color: 0,
-                    colorKey: 'teal',
-                  }
-                }
-              />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text numberOfLines={1} style={s.text}>
-                  {item.description ||
-                    ledger.categories.find((c) => c.id === item.categoryId)?.name ||
-                    'Receita'}
-                </Text>
-                <Text style={s.muted}>{dateLabel(item.date)}</Text>
-              </View>
-              <Text
-                style={[
-                  s.text,
-                  { color: item.kind === 'RECEITA' ? palette.income : palette.expense },
-                ]}
-              >
-                {item.kind === 'RECEITA' ? '+' : '−'} {money(item.cents)}
-              </Text>
-            </View>
-          ))
-        )}
-      </Card>
     </>
   );
 }
