@@ -15,7 +15,13 @@ declare class SaldoModule extends NativeModule<NativeEvents> {
   writeLedger(text: string): Promise<void>;
   getPreferences(): Promise<{
     lastBackup: number;
+    backgroundBackup: boolean;
+    reminderAfter: number;
   }>;
+  chooseBackupFolder(): Promise<boolean>;
+  disableBackgroundBackup(): Promise<void>;
+  postponeBackup(): Promise<void>;
+  backgroundBackup(text: string): Promise<boolean>;
   exportBackup(text: string, name: string): Promise<boolean>;
   importBackup(): Promise<string | null>;
   checkUpdate(manual: boolean): Promise<{ release: Release | null; message: string }>;

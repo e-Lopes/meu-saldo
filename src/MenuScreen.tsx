@@ -2,7 +2,7 @@ import { ReactNode, useState } from 'react';
 import { Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAppearance } from './Appearance';
-import { Ledger } from './finance';
+import { backupDue, Ledger } from './finance';
 import { MenuRow } from './MenuRow';
 import { Card, SectionHeader } from './ui';
 
@@ -17,6 +17,8 @@ type Props = {
   onCategories: () => void;
   onExport: () => void;
   onImport: () => void;
+  onBackgroundBackup: () => void;
+  onDisableBackground: () => void;
 };
 export function MenuScreen({
   ledger,
@@ -29,12 +31,13 @@ export function MenuScreen({
   onCategories,
   onExport,
   onImport,
+  onBackgroundBackup,
+  onDisableBackground,
 }: Props) {
-  const { palette, s, lastBackup } = useAppearance();
+  const { palette, s, lastBackup, backgroundBackup } = useAppearance();
   const [showUpdates, setShowUpdates] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const reminder =
-    !!ledger?.entries.length && (!lastBackup || Date.now() - lastBackup > 14 * 86400000);
+  const reminder = !!ledger?.entries.length && backupDue(lastBackup);
   return (
     <>
       <SectionHeader>Organização</SectionHeader>
@@ -65,6 +68,26 @@ export function MenuScreen({
           onPress={onImport}
         />
         <View style={s.divider} />
+        <MenuRow
+          icon="folder-outline"
+          title="Backup em segundo plano"
+          subtitle={
+            backgroundBackup
+              ? 'Ativado: ao abrir o app após três meses'
+              : 'Autorizar uma pasta para cópias automáticas'
+          }
+          disabled={busy || backupBusy || !ledger}
+          onPress={onBackgroundBackup}
+        />
+        {backgroundBackup && (
+          <MenuRow
+            icon="pause-outline"
+            title="Desativar backup automático"
+            subtitle="As cópias já salvas serão mantidas"
+            disabled={backupBusy}
+            onPress={onDisableBackground}
+          />
+        )}
         {reminder && (
           <Text style={{ color: palette.warning, fontSize: 14 }}>
             Você ainda não exportou uma cópia recente.

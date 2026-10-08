@@ -122,7 +122,9 @@ Backup automático e transferência automática do Android estão desativados. *
 
 O backup JSON não é criptografado: quem tiver acesso ao arquivo poderá ler os registros. A restauração valida o arquivo, mostra um resumo e exige confirmação antes de substituir os dados.
 
-A data da última exportação fica em `SharedPreferences/app_preferences`, separada de `saldo.json` e do backup financeiro. A data é registrada depois de concluir a escrita; cancelamentos e falhas não registram sucesso. Ela não comprova que o arquivo ainda exista. Após 14 dias sem exportação, os Ajustes mostram um lembrete discreto se houver lançamentos.
+A data da última exportação fica em `SharedPreferences/app_preferences`, separada de `saldo.json` e do backup financeiro. A data é registrada depois de concluir a escrita; cancelamentos e falhas não registram sucesso. Ela não comprova que o arquivo ainda exista. Com lançamentos e sem backup recente, o aplicativo oferece exportar agora, configurar uma pasta para cópias automáticas ou adiar por sete dias. O intervalo é de três meses de calendário, respeitando meses curtos.
+
+O backup automático do Meu Saldo é separado do backup do sistema Android: depende da escolha explícita de uma pasta pelo Storage Access Framework. A primeira cópia é criada durante a configuração; as próximas são criadas ao abrir ou retornar ao aplicativo depois de três meses. Não há serviço executando com o aplicativo fechado. A escrita ocorre em IO, verifica o conteúdo e só então registra sucesso. Cada cópia tem nome próprio, sem substituir as anteriores. A opção pode ser desativada nos Ajustes.
 
 
 O GitHub recebe os dados normais das requisições de atualização, como IP e versão do app. Nenhum registro financeiro ou backup é enviado.

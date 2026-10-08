@@ -43,10 +43,14 @@ export function EntryForm({
   onSave,
   onDelete,
   onClose,
+  draft,
+  onDuplicate,
   initialKind = 'DESPESA',
   mutate,
 }: {
   entry: Entry | null;
+  draft?: Entry;
+  onDuplicate?: (entry: Entry) => void;
   ledger: Ledger;
   month: string;
   onSave: (entry: Entry, recurrence: RecurrenceChange) => Promise<void>;
@@ -55,34 +59,35 @@ export function EntryForm({
   initialKind?: Kind;
   mutate: (change: (ledger: Ledger) => Ledger) => Promise<void>;
 }) {
+  const initial = entry ?? draft;
   const { palette, s } = useAppearance();
   const { alert, dialog } = useSheetDialog();
   const [categoryPicker, setCategoryPicker] = useState(false);
   const [showActions, setShowActions] = useState(false);
-  const [kind, setKind] = useState<Kind>(entry?.kind ?? initialKind);
+  const [kind, setKind] = useState<Kind>(initial?.kind ?? initialKind);
   const rule = ledger.recurrences.find((r) => r.id === entry?.recurrenceId);
   const [repeat, setRepeat] = useState(rule?.active ?? false);
   const [frequency, setFrequency] = useState<Frequency>(rule?.frequency ?? 'monthly');
   const [createCategory, setCreateCategory] = useState(false);
   const [amount, setAmount] = useState(
-    entry ? (entry.cents / 100).toFixed(2).replace('.', ',') : '',
+    initial ? (initial.cents / 100).toFixed(2).replace('.', ',') : '',
   );
-  const [description, setDescription] = useState(entry?.description ?? '');
-  const [initialDate] = useState(entry?.date ?? initialEntryDate(month));
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [initialDate] = useState(initial?.date ?? initialEntryDate(month));
   const [date, setDate] = useState(initialDate);
   const amountRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
   const [amountError, setAmountError] = useState('');
   const [categoryError, setCategoryError] = useState('');
   const categoryPosition = useRef(0);
-  const [categoryId, setCategoryId] = useState<string | null>(entry?.categoryId ?? null);
+  const [categoryId, setCategoryId] = useState<string | null>(initial?.categoryId ?? null);
   const [calendar, setCalendar] = useState(false);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [savedEvent, setSavedEvent] = useState(0);
   const [error, setError] = useState('');
   const categories = ledger.categories.filter(
-    (c) => c.kind === kind && (!c.archived || c.id === entry?.categoryId),
+    (c) => c.kind === kind && (!c.archived || c.id === initial?.categoryId),
   );
   const [categorySearch, setCategorySearch] = useState('');
   const selectedCategory = categories.find((category) => category.id === categoryId);
@@ -90,11 +95,11 @@ export function EntryForm({
     searchText(category.name).includes(searchText(categorySearch)),
   );
   const baseline = useRef({
-    kind: entry?.kind ?? initialKind,
-    amount: entry ? (entry.cents / 100).toFixed(2).replace('.', ',') : '',
-    description: entry?.description ?? '',
+    kind: initial?.kind ?? initialKind,
+    amount: initial ? (initial.cents / 100).toFixed(2).replace('.', ',') : '',
+    description: initial?.description ?? '',
     date: initialDate,
-    categoryId: entry?.categoryId ?? null,
+    categoryId: initial?.categoryId ?? null,
   });
   const changed =
     kind !== baseline.current.kind ||
@@ -454,7 +459,29 @@ export function EntryForm({
                   disabled={saving}
                 />
                 {showActions && (
-                  <Button danger title="Excluir lançamento" onPress={remove} disabled={saving} />
+                  <View style={{ gap: 8 }}>
+                    {!!onDuplicate && (
+                      <Button
+                        secondary
+                        title="Duplicar lançamento"
+                        disabled={saving}
+                        onPress={() => {
+                          if (!entry) return;
+                          if (changed || recurrenceChanged)
+                            alert(
+                              'Duplicar lançamento salvo?',
+                              'A cópia usa os dados já salvos. As alterações desta edição serão descartadas.',
+                              [
+                                { text: 'Cancelar', style: 'cancel' },
+                                { text: 'Duplicar', onPress: () => onDuplicate(entry) },
+                              ],
+                            );
+                          else onDuplicate(entry);
+                        }}
+                      />
+                    )}
+                    <Button danger title="Excluir lançamento" onPress={remove} disabled={saving} />
+                  </View>
                 )}
               </View>
             )}

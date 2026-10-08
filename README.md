@@ -10,12 +10,15 @@ Organize suas finanças e acompanhe para onde vai o seu dinheiro. O Meu Saldo é
 
 - **Acompanhar o mês:** veja quanto recebeu, quanto gastou e o saldo restante.
 - **Registrar receitas e despesas:** adicione valores, datas e descrições; edite quando precisar.
+- **Duplicar um lançamento:** crie uma cópia com a data de hoje, mantendo valor, descrição e categoria; a cópia não inicia uma recorrência.
+- **Planejar o próximo período:** consulte as recorrências previstas para sete dias e a diferença de receitas e despesas em relação ao mês anterior.
 - **Repetir lançamentos:** registre receitas e despesas semanais ou mensais automaticamente ao abrir o aplicativo.
 - **Organizar por categorias:** separe receitas e despesas em grupos com nomes, emojis ou ícones prontos; a cor é escolhida automaticamente.
 - **Entender seus hábitos:** consulte os gastos por categoria e compare receitas e despesas dos últimos seis meses.
 - **Encontrar um lançamento:** busque no histórico e filtre por tipo ou categoria.
 - **Consultar com clareza:** interface em tema escuro, com valores sempre visíveis.
 - **Guardar uma cópia:** salve seus registros em um arquivo para recuperá-los depois ou levar para outro celular.
+- **Lembrar do backup:** escolha exportar agora, adiar ou autorizar cópias em uma pasta. Depois de três meses, a cópia automática acontece ao entrar no aplicativo, com ele aberto.
 
 O saldo considera as receitas menos as despesas do mês escolhido. Valores de meses anteriores não são somados automaticamente.
 

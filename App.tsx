@@ -25,6 +25,7 @@ import { EntryForm } from './src/EntryForm';
 import { SaveNotice } from './src/SaveNotice';
 import {
   Entry,
+  duplicateEntry,
   Kind,
   Ledger,
   Recurrence,
@@ -44,6 +45,7 @@ function Main() {
   const [tab, setTab] = useState<Tab>('home');
   const [month, setMonth] = useState(today().slice(0, 7));
   const [entry, setEntry] = useState<Entry | null | undefined>();
+  const [duplicateDraft, setDuplicateDraft] = useState<Entry>();
   const [initialKind, setInitialKind] = useState<Kind>('DESPESA');
   const [chartsKind, setChartsKind] = useState<Kind>('DESPESA');
   const [savedEvent, setSavedEvent] = useState(0);
@@ -62,15 +64,23 @@ function Main() {
   } | null>(null);
   const {
     busy: backupBusy,
+    backgroundSavedEvent,
     preview,
     cancelPreview,
     exportBackup,
+    enableBackground,
+    disableBackground,
     importBackup,
     restoreBackup,
-  } = useBackup(store, refreshPreferences, () => {
-    setUndo(null);
-    clearFilters();
-  });
+  } = useBackup(
+    store,
+    refreshPreferences,
+    () => {
+      setUndo(null);
+      clearFilters();
+    },
+    entry === undefined && !categories,
+  );
   useEffect(() => {
     if (!undo) return;
     const timer = setTimeout(() => setUndo(null), Math.max(0, undo.deadline - Date.now()));
@@ -110,6 +120,7 @@ function Main() {
   };
   const addEntry = (kind: Kind = 'DESPESA') => {
     if (!store.busy && store.ledger) {
+      setDuplicateDraft(undefined);
       setInitialKind(kind);
       setEntry(null);
     }
@@ -273,6 +284,8 @@ function Main() {
               updateVersion={updates.release?.versionName}
               updateContent={<UpdateCard updates={updates} settings />}
               onCategories={() => setCategories(true)}
+              onBackgroundBackup={enableBackground}
+              onDisableBackground={() => void disableBackground()}
               onExport={() => void exportBackup()}
               onImport={() => void importBackup()}
             />
@@ -316,6 +329,7 @@ function Main() {
           </Pressable>
         </View>
       )}
+      <SaveNotice event={backgroundSavedEvent} message="Backup salvo" show={entry === undefined} />
       <SaveNotice event={savedEvent} message={savedMessage} show={entry === undefined} />
       <BottomNavigation
         tab={tab}
@@ -325,12 +339,21 @@ function Main() {
       />
       {entry !== undefined && ledger && (
         <EntryForm
+          key={entry?.id ?? duplicateDraft?.id ?? 'new'}
+          draft={duplicateDraft}
+          onDuplicate={(source) => {
+            setDuplicateDraft(duplicateEntry(source));
+            setEntry(null);
+          }}
           entry={entry}
           ledger={ledger}
           month={month}
           initialKind={initialKind}
           mutate={store.mutate}
-          onClose={() => setEntry(undefined)}
+          onClose={() => {
+            setEntry(undefined);
+            setDuplicateDraft(undefined);
+          }}
           onSave={async (value, recurrence) => {
             const previous = store.ledger?.entries.find((item) => item.id === value.id);
             const ending =

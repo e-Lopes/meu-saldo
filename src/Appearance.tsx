@@ -62,18 +62,23 @@ export const createStyles = (p: Colors) =>
     chipSelected: { backgroundColor: p.accent },
     divider: { height: 1, backgroundColor: p.border },
   });
-type Preferences = { lastBackup: number };
+type Preferences = { lastBackup: number; backgroundBackup: boolean; reminderAfter: number };
 type AppearanceValue = {
   palette: Colors;
   s: ReturnType<typeof createStyles>;
   dark: boolean;
   lastBackup: number;
+  backgroundBackup: boolean;
   money: (cents: number) => string;
   refreshPreferences: () => Promise<void>;
 };
 const AppearanceContext = createContext<AppearanceValue | null>(null);
 export function AppearanceProvider({ children }: { children: ReactNode }) {
-  const [prefs, setPrefs] = useState<Preferences>({ lastBackup: 0 });
+  const [prefs, setPrefs] = useState<Preferences>({
+    lastBackup: 0,
+    backgroundBackup: false,
+    reminderAfter: 0,
+  });
   const [ready, setReady] = useState(false);
   const refreshPreferences = async () => {
     setPrefs(await Native.getPreferences());
@@ -92,6 +97,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
         s: styles,
         dark: true,
         lastBackup: prefs.lastBackup,
+        backgroundBackup: prefs.backgroundBackup,
         money: formatMoney,
         refreshPreferences,
       }}

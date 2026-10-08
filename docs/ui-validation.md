@@ -4,7 +4,7 @@ Atualizado em **08/10/2026**. Este roteiro descreve o código atual; não anunci
 
 ## Verificações automatizadas
 
-- `npm test`: 39 testes financeiros e de interação.
+- `npm test`: 46 testes financeiros e de interação, incluindo duplicação independente, previsão de recorrências, comparação mensal e lembrete/backup automático.
 - `npm run validate`: TypeScript e formatação.
 - `npm run release:check`: ferramentas de preparação, versão, configuração e assinatura.
 - `git diff --check`: espaços e integridade dos diffs.
@@ -30,6 +30,8 @@ Conferidos:
 As capturas e os dados do emulador são artefatos locais ignorados pelo Git. Não há dados financeiros pessoais nos arquivos versionados de teste.
 
 ## Cenários ainda pendentes no Android
+
+Os novos fluxos de duplicação e escolha de pasta para backup automático têm testes de interação e compilação nativa concluídos; ainda precisam de conferência manual no emulador. A análise externa está em [analise-thunder-wallet.md](analise-thunder-wallet.md).
 
 1. **Teclado e fonte ampliada:** digitar valores e descrições longas, rolar o formulário, alcançar Salvar e voltar sem perder o conteúdo. Conferir telas estreitas, textos grandes e TalkBack em aparelho físico.
 2. **Histórico extenso:** rolar muitos lançamentos nos dois sentidos, com filtros e fonte ampliada, sem saltos. A conferência com poucos registros no emulador não comprova esse cenário.

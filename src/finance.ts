@@ -634,3 +634,59 @@ export function groups(ledger: Ledger, month: string, kind: Kind = 'DESPESA') {
       return { ...g, percentage: (g.cents * 100) / total, cumulative: (accumulated * 100) / total };
     });
 }
+
+export function duplicateEntry(entry: Entry, date = today()): Entry {
+  return {
+    id: id(),
+    kind: entry.kind,
+    cents: entry.cents,
+    categoryId: entry.categoryId,
+    description: entry.description,
+    date,
+  };
+}
+export function upcomingOccurrences(ledger: Ledger, from = today()) {
+  const end = civilDate(from);
+  end.setDate(end.getDate() + 7);
+  const until = dateString(end);
+  const result: Entry[] = [];
+  for (const rule of ledger.recurrences.filter((r) => r.active)) {
+    let date =
+      rule.nextDate > from ? rule.nextDate : nextOccurrence(rule.frequency, rule.anchorDate, from);
+    while (date <= until) {
+      result.push({
+        id: `${rule.id}:${date}`,
+        kind: rule.kind,
+        cents: rule.cents,
+        categoryId: rule.categoryId,
+        description: rule.description,
+        date,
+        recurrenceId: rule.id,
+        occurrenceDate: date,
+      });
+      date = nextOccurrence(rule.frequency, rule.anchorDate, date);
+    }
+  }
+  return result.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+}
+export function monthlyComparison(ledger: Ledger, month: string) {
+  const current = totals(monthEntries(ledger, month));
+  const previous = totals(monthEntries(ledger, shiftMonth(month, -1)));
+  return { income: current.income - previous.income, expense: current.expense - previous.expense };
+}
+export function backupDue(lastBackup: number, now = new Date()) {
+  if (!lastBackup) return true;
+  const last = new Date(lastBackup);
+  const target = new Date(
+    last.getFullYear(),
+    last.getMonth() + 3,
+    1,
+    last.getHours(),
+    last.getMinutes(),
+    last.getSeconds(),
+    last.getMilliseconds(),
+  );
+  const end = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+  target.setDate(Math.min(last.getDate(), end));
+  return now.getTime() >= target.getTime();
+}

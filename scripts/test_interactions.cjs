@@ -120,6 +120,8 @@ function form({
   ledger = finance.initialLedger(),
   entry = null,
   initialKind = 'RECEITA',
+  draft,
+  onDuplicate,
   onSave = async () => {},
   onClose = () => {},
 } = {}) {
@@ -166,6 +168,8 @@ function form({
         ledger,
         month: finance.today().slice(0, 7),
         initialKind,
+        draft,
+        onDuplicate,
         onSave,
         onClose,
         onDelete: async () => {},
@@ -809,4 +813,121 @@ test('category charts retain participation bars and six-month comparison without
   const trend = monthlyState.render(() => monthly.type(monthly.props));
   assert.ok(nodes(trend).some((node) => node.type === 'Svg'));
   assert.ok(nodes(trend).some((node) => node.props.children === 'Últimos 6 meses'));
+});
+
+test('duplicate action opens a new draft and saving does not edit the source or recurrence', async () => {
+  const data = seed();
+  const original = data.entries[0];
+  let draft;
+  const editor = form({
+    ledger: data,
+    entry: original,
+    onDuplicate: (entry) => {
+      draft = finance.duplicateEntry(entry);
+    },
+  });
+  find(editor.render(), 'Button', 'title', 'Mais ações').onPress();
+  find(editor.render(), 'Button', 'title', 'Duplicar lançamento').onPress();
+  assert.ok(draft);
+  const saved = [];
+  const creator = form({ ledger: data, draft, onSave: async (...args) => saved.push(args) });
+  assert.equal(
+    find(creator.render(), 'Field', 'label', 'Descrição (opcional)').value,
+    original.description,
+  );
+  find(creator.render(), 'Button', 'title', 'Salvar').onPress();
+  await flush();
+  assert.equal(saved.length, 1);
+  assert.notEqual(saved[0][0].id, original.id);
+  assert.equal(saved[0][0].date, finance.today());
+  assert.equal(saved[0][1].repeat, false);
+  assert.equal(data.entries.length, 1);
+});
+
+test('backup reminder offers explicit choices; background copy requires prior folder permission', async () => {
+  const state = hooks();
+  const alerts = [];
+  let postponed = 0,
+    background = 0;
+  const { useBackup } = source('useBackup.ts', {
+    react: state.react,
+    'react-native': {
+      Alert: { alert: (...args) => alerts.push(args) },
+      AppState: { currentState: 'active', addEventListener: () => ({ remove() {} }) },
+    },
+    './finance': finance,
+    './native': {
+      __esModule: true,
+      default: {
+        getPreferences: async () => ({ lastBackup: 0, backgroundBackup: false, reminderAfter: 0 }),
+        postponeBackup: async () => {
+          postponed++;
+        },
+        backgroundBackup: async () => {
+          background++;
+        },
+      },
+    },
+    './useLedger': { errorMessage: (error) => error.message },
+  });
+  state.render(() =>
+    useBackup(
+      { ledger: seed(), busy: false, loading: false },
+      async () => {},
+      () => {},
+    ),
+  );
+  await flush();
+  assert.equal(alerts[0][0], 'Proteja seus registros');
+  assert.equal(background, 0);
+  assert.deepEqual(
+    Array.from(alerts[0][2], (a) => a.text),
+    ['Depois', 'Em segundo plano', 'Fazer agora'],
+  );
+  alerts[0][2][0].onPress();
+  await flush();
+  assert.equal(postponed, 1);
+});
+
+test('automatic backup writes a complete snapshot and failed writes do not mark success', async () => {
+  for (const failing of [false, true]) {
+    const state = hooks();
+    const data = seed();
+    const before = JSON.stringify(data);
+    let stored;
+    const alerts = [];
+    const { useBackup } = source('useBackup.ts', {
+      react: state.react,
+      'react-native': {
+        Alert: { alert: (...args) => alerts.push(args) },
+        AppState: { currentState: 'active', addEventListener: () => ({ remove() {} }) },
+      },
+      './finance': finance,
+      './native': {
+        __esModule: true,
+        default: {
+          getPreferences: async () => ({ lastBackup: 0, backgroundBackup: true, reminderAfter: 0 }),
+          backgroundBackup: async (text) => {
+            if (failing) throw new Error('Pasta indisponível');
+            stored = text;
+          },
+        },
+      },
+      './useLedger': { errorMessage: (error) => error.message },
+    });
+    const render = () =>
+      state.render(() =>
+        useBackup(
+          { ledger: data, busy: false, loading: false },
+          async () => {},
+          () => {},
+        ),
+      );
+    render();
+    await flush();
+    assert.equal(render().backgroundSavedEvent, failing ? 0 : 1);
+    assert.equal(JSON.stringify(data), before);
+    if (failing) assert.equal(alerts[0][0], 'Backup não salvo');
+    else assert.deepEqual(finance.decode(stored).recurrences, data.recurrences);
+  }
 });

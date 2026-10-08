@@ -1,17 +1,13 @@
-# Meu Saldo 1.0.1 — Cadastro rápido e tema unificado
+# Meu Saldo 1.1.0
 
-- Corrigida a seleção automática no campo de valor que fazia o segundo dígito substituir o primeiro.
-- Botão de limpar com posição fixa e dica de formato do valor.
-- Tema escuro unificado em azul para seleções, filtros, botões, navegação e campos de texto; cores de receita e despesa preservadas.
-- Até três categorias mais usadas disponíveis diretamente no cadastro.
-- Opção “Salvar e adicionar outro”, mantendo data, tipo e categoria e limpando valor e descrição.
-- Confirmação visual após salvar e Histórico sem repetição da categoria quando não há descrição.
-- Remoção individual dos filtros de tipo, categoria e busca.
-- Validação em pushes e PRs, testes financeiros e Actions fixadas por commit com atualizações propostas pelo Dependabot.
-- Push de release gera candidato; publicação após promoção ou opção explícita no disparo manual.
+- Recorrências semanais e mensais, com recuperação dos lançamentos vencidos e encerramento sem apagar o histórico.
+- Categorias de receitas e despesas, cores persistidas e cadastro simplificado.
+- Resumo reorganizado, Histórico com busca e filtros alinhados, tema escuro fixo e novo ícone Android.
+- Duplicação de receitas e despesas com a data de hoje, mantendo valor, descrição e categoria, sem duplicar a recorrência.
+- Desfazer exclusão, próximas recorrências de sete dias e diferença mensal simples no Resumo.
+- Lembrete de backup e cópias automáticas em pasta autorizada, ao entrar no aplicativo após três meses.
+- Documentação atualizada; interação do donut e comparação ampliada nos Gráficos permanecem nos próximos passos.
 
-Validação local: TypeScript, formatação, cinco testes financeiros, onze testes de release, configuração e estrutura dos workflows aprovados. O candidato Android e a publicação passam pelas verificações de assinatura, pacote, versão, tamanho e SHA-256 no GitHub Actions.
+Validação: 46 testes financeiros e de interação, checagem de tipos, formatação e compilação Android de desenvolvimento. As verificações de release conferem assinatura original, pacote, versão e SHA-256. A conferência manual dos novos seletores de backup, duplicação e cenários de acessibilidade permanece pendente.
 
-A conferência visual, teclado, cadastro em sequência, instalação sobre a versão anterior e preservação dos dados em aparelho físico permanecem pendentes. A publicação foi solicitada sem essa conferência.
-
-Instale sobre a versão anterior, sem desinstalar. Mantidos o identificador, a assinatura original e o formato dos dados locais. Versão interna Android: 9.
+Instale sobre a versão anterior, sem desinstalar. O identificador e a assinatura original são preservados; dados antigos são migrados. Versão interna Android: 10.

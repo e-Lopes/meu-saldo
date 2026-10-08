@@ -417,3 +417,94 @@ test('monthly totals exclude other months and balance income against expenses', 
     balance: 0,
   });
 });
+
+test('duplicates preserve financial fields but start as independent entries today', () => {
+  for (const kind of ['RECEITA', 'DESPESA']) {
+    const original = expense({
+      kind,
+      categoryId: kind === 'RECEITA' ? null : 'food',
+      recurrenceId: 'series',
+      occurrenceDate: '2024-02-29',
+    });
+    const copy = finance.duplicateEntry(original, '2026-10-08');
+    assert.notEqual(copy.id, original.id);
+    assert.equal(copy.date, '2026-10-08');
+    assert.equal(copy.cents, original.cents);
+    assert.equal(copy.categoryId, original.categoryId);
+    assert.equal(copy.description, original.description);
+    assert.equal(copy.kind, original.kind);
+    assert.equal(copy.recurrenceId, undefined);
+    assert.equal(copy.occurrenceDate, undefined);
+    assert.equal(original.date, '2024-02-29');
+  }
+});
+
+test('seven-day forecast is read-only, skips inactive series and uses real civil schedules', () => {
+  const data = finance.initialLedger();
+  data.recurrences = [
+    {
+      id: 'weekly',
+      kind: 'DESPESA',
+      cents: 100,
+      categoryId: 'food',
+      description: 'Semana',
+      frequency: 'weekly',
+      anchorDate: '2024-02-20',
+      nextDate: '2024-02-27',
+      active: true,
+    },
+    {
+      id: 'monthly',
+      kind: 'RECEITA',
+      cents: 200,
+      categoryId: null,
+      description: 'Mês',
+      frequency: 'monthly',
+      anchorDate: '2024-01-31',
+      nextDate: '2024-02-29',
+      active: true,
+    },
+    {
+      id: 'stopped',
+      kind: 'RECEITA',
+      cents: 300,
+      categoryId: null,
+      description: '',
+      frequency: 'weekly',
+      anchorDate: '2024-02-20',
+      nextDate: '2024-02-27',
+      active: false,
+    },
+  ];
+  const before = JSON.stringify(data);
+  assert.deepEqual(
+    finance.upcomingOccurrences(data, '2024-02-25').map((e) => e.date),
+    ['2024-02-27', '2024-02-29'],
+  );
+  assert.deepEqual(
+    finance.upcomingOccurrences(data, '2024-02-27').map((e) => e.date),
+    ['2024-02-29', '2024-03-05'],
+  );
+  assert.equal(JSON.stringify(data), before);
+  assert.deepEqual(finance.totals(data.entries), { income: 0, expense: 0, balance: 0 });
+});
+
+test('monthly comparison handles the year boundary and empty months without scoring', () => {
+  const data = finance.initialLedger();
+  data.entries = [
+    expense({ id: 'dec', date: '2025-12-20', cents: 200 }),
+    expense({ id: 'jan', date: '2026-01-20', cents: 100 }),
+    expense({ id: 'income', kind: 'RECEITA', categoryId: null, date: '2026-01-10', cents: 500 }),
+  ];
+  assert.deepEqual(finance.monthlyComparison(data, '2026-01'), { income: 500, expense: -100 });
+  assert.deepEqual(finance.monthlyComparison(data, '2026-02'), { income: -500, expense: -100 });
+});
+
+test('backup interval is three calendar months including short months and leap years', () => {
+  assert.equal(finance.backupDue(0), true);
+  const last = new Date('2024-01-31T12:00:00').getTime();
+  assert.equal(finance.backupDue(last, new Date('2024-04-30T11:59:59')), false);
+  assert.equal(finance.backupDue(last, new Date('2024-04-30T12:00:00')), true);
+  const november = new Date('2023-11-30T12:00:00').getTime();
+  assert.equal(finance.backupDue(november, new Date('2024-02-29T12:00:00')), true);
+});
