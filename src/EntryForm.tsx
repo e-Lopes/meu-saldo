@@ -311,6 +311,7 @@ export function EntryForm({
                     inputRef={amountRef}
                     error={amountError}
                     value={amount}
+                    formattedValue={amount}
                     selection={{ start: amount.length, end: amount.length }}
                     onChangeText={(value) => {
                       setAmount(formatAmountInput(value));

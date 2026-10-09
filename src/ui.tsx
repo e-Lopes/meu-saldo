@@ -318,6 +318,7 @@ export function Field({
   inputRef,
   hideLabel = false,
   emoji = false,
+  formattedValue,
   ...props
 }: TextInputProps & {
   label: string;
@@ -326,6 +327,7 @@ export function Field({
   inputRef?: React.Ref<TextInput>;
   hideLabel?: boolean;
   emoji?: boolean;
+  formattedValue?: string;
 }) {
   const { palette, s } = useAppearance();
   return (
@@ -348,6 +350,46 @@ export function Field({
             onChangeText={props.onChangeText}
             style={{ height: 40, width: '100%' }}
           />
+        </View>
+      ) : formattedValue !== undefined ? (
+        <View>
+          <TextInput
+            ref={inputRef}
+            accessibilityLabel={label}
+            {...props}
+            caretHidden
+            selectionColor="transparent"
+            cursorColor="transparent"
+            style={[
+              s.input,
+              error ? { borderColor: palette.expense } : null,
+              props.style,
+              { color: 'transparent' },
+            ]}
+          />
+          {/* Native keystrokes stay hidden until the formatted value is ready. */}
+          <View
+            pointerEvents="none"
+            accessible={false}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={{
+              position: 'absolute',
+              left: 17,
+              right: 17,
+              top: 0,
+              bottom: 0,
+              justifyContent: 'center',
+            }}
+          >
+            <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              style={[{ fontSize: s.input.fontSize, color: palette.navy }, props.style]}
+            >
+              {formattedValue}
+            </Text>
+          </View>
         </View>
       ) : (
         <TextInput
