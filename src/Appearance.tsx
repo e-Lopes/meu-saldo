@@ -4,7 +4,7 @@ import Native from './native';
 import { money as formatMoney } from './finance';
 import { errorMessage } from './useLedger';
 
-import { darkColors, Colors } from './theme/palettes';
+import { darkColors, lightColors, Colors } from './theme/palettes';
 import { spacing, radius, controlSize, typography } from './theme/tokens';
 export type { Colors };
 export const createStyles = (p: Colors) =>
@@ -62,11 +62,20 @@ export const createStyles = (p: Colors) =>
     chipSelected: { backgroundColor: p.accent },
     divider: { height: 1, backgroundColor: p.border },
   });
-type Preferences = { lastBackup: number; backgroundBackup: boolean; reminderAfter: number };
+type Theme = 'light' | 'dark';
+type Preferences = {
+  theme: Theme;
+  lastBackup: number;
+  backgroundBackup: boolean;
+  reminderAfter: number;
+};
 type AppearanceValue = {
   palette: Colors;
   s: ReturnType<typeof createStyles>;
   dark: boolean;
+  theme: Theme;
+  themeBusy: boolean;
+  setTheme: (theme: Theme) => Promise<void>;
   lastBackup: number;
   backgroundBackup: boolean;
   money: (cents: number) => string;
@@ -75,11 +84,25 @@ type AppearanceValue = {
 const AppearanceContext = createContext<AppearanceValue | null>(null);
 export function AppearanceProvider({ children }: { children: ReactNode }) {
   const [prefs, setPrefs] = useState<Preferences>({
+    theme: 'light',
     lastBackup: 0,
     backgroundBackup: false,
     reminderAfter: 0,
   });
   const [ready, setReady] = useState(false);
+  const [themeBusy, setThemeBusy] = useState(false);
+  const setTheme = async (theme: Theme) => {
+    if (themeBusy) return;
+    setThemeBusy(true);
+    try {
+      await Native.setTheme(theme);
+      setPrefs((current) => ({ ...current, theme }));
+    } catch (e) {
+      Alert.alert('Não foi possível alterar a aparência', errorMessage(e));
+    } finally {
+      setThemeBusy(false);
+    }
+  };
   const refreshPreferences = async () => {
     setPrefs(await Native.getPreferences());
   };
@@ -88,14 +111,18 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
       .catch((e) => Alert.alert('Preferências indisponíveis', errorMessage(e)))
       .finally(() => setReady(true));
   }, []);
-  const palette = darkColors;
+  const dark = prefs.theme === 'dark';
+  const palette = dark ? darkColors : lightColors;
   const styles = useMemo(() => createStyles(palette), [palette]);
   return (
     <AppearanceContext.Provider
       value={{
         palette,
         s: styles,
-        dark: true,
+        dark,
+        theme: prefs.theme,
+        themeBusy,
+        setTheme,
         lastBackup: prefs.lastBackup,
         backgroundBackup: prefs.backgroundBackup,
         money: formatMoney,

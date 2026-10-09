@@ -14,10 +14,12 @@ declare class SaldoModule extends NativeModule<NativeEvents> {
   readLedger(): Promise<string | null>;
   writeLedger(text: string): Promise<void>;
   getPreferences(): Promise<{
+    theme: 'light' | 'dark';
     lastBackup: number;
     backgroundBackup: boolean;
     reminderAfter: number;
   }>;
+  setTheme(theme: 'light' | 'dark'): Promise<void>;
   chooseBackupFolder(): Promise<boolean>;
   disableBackgroundBackup(): Promise<void>;
   postponeBackup(): Promise<void>;

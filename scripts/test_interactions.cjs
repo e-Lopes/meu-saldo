@@ -788,8 +788,8 @@ test('history rows truncate long descriptions, align amounts right and show cate
   assert.match(tree.props.accessibilityLabel, /despesa, − R\$/);
 });
 
-test('text, financial labels and category icons maintain contrast in the fixed dark theme', () => {
-  const { darkColors } = source('theme/palettes.ts');
+test('text, financial labels and category icons maintain contrast in light and dark themes', () => {
+  const { darkColors, lightColors } = source('theme/palettes.ts');
   const rgb = (hex) => [1, 3, 5].map((offset) => parseInt(hex.slice(offset, offset + 2), 16));
   const luminance = (rgb) =>
     rgb
@@ -800,7 +800,10 @@ test('text, financial labels and category icons maintain contrast in the fixed d
     const [a, b] = [luminance(foreground), luminance(background)].sort((x, y) => y - x);
     return (a + 0.05) / (b + 0.05);
   };
-  for (const [dark, palette] of [[true, darkColors]]) {
+  for (const [dark, palette] of [
+    [true, darkColors],
+    [false, lightColors],
+  ]) {
     for (const foreground of ['navy', 'muted', 'income', 'expense', 'warning'])
       for (const background of ['card', 'background', 'soft', 'selected'])
         assert.ok(

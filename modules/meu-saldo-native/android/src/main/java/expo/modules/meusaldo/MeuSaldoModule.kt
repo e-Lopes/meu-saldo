@@ -50,7 +50,12 @@ class MeuSaldoModule : Module() {
     Constant("versionName") { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "" }
     AsyncFunction("getPreferences") {
       applyTheme()
-      mapOf("lastBackup" to preferences.getLong("lastBackup", 0), "backgroundBackup" to preferences.getBoolean("backgroundBackup", false), "reminderAfter" to preferences.getLong("reminderAfter", 0))
+      mapOf("theme" to preferences.getString("theme", "light"), "lastBackup" to preferences.getLong("lastBackup", 0), "backgroundBackup" to preferences.getBoolean("backgroundBackup", false), "reminderAfter" to preferences.getLong("reminderAfter", 0))
+    }
+    AsyncFunction("setTheme") { theme: String ->
+      require(theme == "light" || theme == "dark") { "Tema inválido." }
+      require(preferences.edit().putString("theme", theme).commit()) { "Não foi possível salvar o tema." }
+      applyTheme()
     }
     AsyncFunction("chooseBackupFolder") { promise: Promise ->
       startPicker(promise, null, Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
@@ -179,7 +184,8 @@ class MeuSaldoModule : Module() {
   @Suppress("DEPRECATION")
   private fun applyTheme() {
     val activity = appContext.currentActivity as? AppCompatActivity ?: return
-    activity.runOnUiThread { activity.delegate.localNightMode = AppCompatDelegate.MODE_NIGHT_YES }
+    val nightMode = if (preferences.getString("theme", "light") == "dark") AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+    activity.runOnUiThread { activity.delegate.localNightMode = nightMode }
   }
 
   @Suppress("DEPRECATION")

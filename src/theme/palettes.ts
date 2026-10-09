@@ -18,3 +18,22 @@ export const darkColors = {
 };
 
 export type Colors = typeof darkColors;
+
+export const lightColors: Colors = {
+  accent: '#287D79',
+  onAccent: '#FFFFFF',
+  navy: '#17304F',
+  background: '#F3F6F8',
+  muted: '#59697C',
+  border: '#DEE6EC',
+  expense: '#A8433E',
+  income: '#21786D',
+  warning: '#8A5A0A',
+  card: '#FFFFFF',
+  soft: '#EAF0F4',
+  selected: '#E5F3F0',
+  hero: '#17304F',
+  heroText: '#FFFFFF',
+  heroMuted: '#C6D8E8',
+  track: '#DEE6EC',
+};

@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAppearance } from './Appearance';
 import { backupDue, Ledger } from './finance';
 import { MenuRow } from './MenuRow';
-import { Card, SectionHeader } from './ui';
+import { Card, SectionHeader, SegmentedControl } from './ui';
 
 type Props = {
   ledger: Ledger | null;
@@ -34,12 +34,26 @@ export function MenuScreen({
   onBackgroundBackup,
   onDisableBackground,
 }: Props) {
-  const { palette, s, lastBackup, backgroundBackup } = useAppearance();
+  const { palette, s, lastBackup, backgroundBackup, theme, themeBusy, setTheme } = useAppearance();
   const [showUpdates, setShowUpdates] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const reminder = !!ledger?.entries.length && backupDue(lastBackup);
   return (
     <>
+      <SectionHeader>Aparência</SectionHeader>
+      <Card>
+        <Text style={s.text}>Tema do aplicativo</Text>
+        <SegmentedControl
+          label="Tema do aplicativo"
+          options={[
+            { value: 'light', label: 'Claro' },
+            { value: 'dark', label: 'Escuro' },
+          ]}
+          value={theme}
+          disabled={themeBusy}
+          onChange={(value) => void setTheme(value)}
+        />
+      </Card>
       <SectionHeader>Organização</SectionHeader>
       <Card>
         <MenuRow
