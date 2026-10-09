@@ -28,6 +28,7 @@ import {
   Kind,
   Ledger,
   parseCents,
+  formatAmountInput,
   initialEntryDate,
   monthName,
   searchText,
@@ -70,9 +71,7 @@ export function EntryForm({
   const [frequency, setFrequency] = useState<Frequency>(rule?.frequency ?? 'monthly');
   const [createCategory, setCreateCategory] = useState(false);
   const [editCategory, setEditCategory] = useState<Category | null>(null);
-  const [amount, setAmount] = useState(
-    initial ? (initial.cents / 100).toFixed(2).replace('.', ',') : '',
-  );
+  const [amount, setAmount] = useState(formatAmountInput(String(initial?.cents ?? 0)));
   const [description, setDescription] = useState(initial?.description ?? '');
   const [initialDate] = useState(initial?.date ?? initialEntryDate(month));
   const [date, setDate] = useState(initialDate);
@@ -98,7 +97,7 @@ export function EntryForm({
   );
   const baseline = useRef({
     kind: initial?.kind ?? initialKind,
-    amount: initial ? (initial.cents / 100).toFixed(2).replace('.', ',') : '',
+    amount: formatAmountInput(String(initial?.cents ?? 0)),
     description: initial?.description ?? '',
     date: initialDate,
     categoryId: initial?.categoryId ?? null,
@@ -127,7 +126,7 @@ export function EntryForm({
     setCategoryError('');
     let cents: number;
     try {
-      cents = parseCents(amount);
+      cents = parseCents(amount.slice(3));
     } catch (e) {
       setAmountError(errorMessage(e));
       amountRef.current?.focus();
@@ -202,8 +201,14 @@ export function EntryForm({
         { repeat, frequency, scope },
       );
       if (addAnother && !entry) {
-        baseline.current = { kind, amount: '', description: '', date, categoryId };
-        setAmount('');
+        baseline.current = {
+          kind,
+          amount: formatAmountInput(''),
+          description: '',
+          date,
+          categoryId,
+        };
+        setAmount(formatAmountInput(''));
         setDescription('');
         setRepeat(false);
         setFrequency('monthly');
@@ -305,14 +310,14 @@ export function EntryForm({
                     label="Valor (R$)"
                     inputRef={amountRef}
                     error={amountError}
-                    placeholder="0,00"
                     value={amount}
+                    selection={{ start: amount.length, end: amount.length }}
                     onChangeText={(value) => {
-                      setAmount(value);
+                      setAmount(formatAmountInput(value));
                       setAmountError('');
                     }}
-                    keyboardType="decimal-pad"
-                    maxLength={16}
+                    keyboardType="number-pad"
+                    maxLength={17}
                     autoFocus={!entry}
                     selectTextOnFocus={false}
                     autoCorrect={false}
@@ -322,10 +327,10 @@ export function EntryForm({
                 </View>
                 <IconButton
                   icon="backspace-outline"
-                  label="Limpar valor"
-                  disabled={saving || !amount}
+                  label="Apagar último dígito do valor"
+                  disabled={saving || amount === formatAmountInput('')}
                   onPress={() => {
-                    setAmount('');
+                    setAmount(formatAmountInput(amount.replace(/\D/g, '').slice(0, -1)));
                     setAmountError('');
                     amountRef.current?.focus();
                   }}

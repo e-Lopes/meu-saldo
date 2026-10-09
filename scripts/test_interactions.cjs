@@ -349,16 +349,43 @@ test('category picker opens the selected category for editing and offers filled 
   assert.equal(find(income.render(), 'Button', 'title', 'Editar categoria').disabled, true);
 });
 
-test('amount validation preserves input and values are always visible', () => {
+test('amount validation preserves zero and values are always visible', () => {
   const data = seed();
   const app = form({ ledger: data, entry: data.entries[0] });
   assert.equal(find(app.render(), 'Field', 'label', 'Valor (R$)').secureTextEntry, undefined);
   assert.ok(!nodes(app.render()).some((node) => node.props.label?.includes('Mostrar valor')));
-  find(app.render(), 'Field', 'label', 'Valor (R$)').onChangeText('1,234');
+  find(app.render(), 'Field', 'label', 'Valor (R$)').onChangeText('');
   find(app.render(), 'Button', 'title', 'Salvar').onPress();
   const field = find(app.render(), 'Field', 'label', 'Valor (R$)');
-  assert.equal(field.value, '1,234');
-  assert.match(field.error, /valor/);
+  assert.equal(field.value, 'R$ 0,00');
+  assert.match(field.error, /limite/);
+});
+
+test('expense and income amounts shift cents when typing and deleting', async () => {
+  for (const initialKind of ['DESPESA', 'RECEITA']) {
+    const saved = [];
+    const data = seed();
+    const app = form({ ledger: data, initialKind, onSave: async (entry) => saved.push(entry) });
+    const field = () => find(app.render(), 'Field', 'label', 'Valor (R$)');
+    const values = ['R$ 0,00', 'R$ 0,01', 'R$ 0,12', 'R$ 1,23', 'R$ 12,34', 'R$ 123,45'];
+    assert.equal(field().value, values[0]);
+    for (let i = 1; i < values.length; i++) {
+      field().onChangeText(field().value + String(i));
+      assert.equal(field().value, values[i]);
+      assert.equal(field().selection.end, values[i].length);
+    }
+    for (let i = values.length - 2; i >= 0; i--) {
+      field().onChangeText(field().value.slice(0, -1));
+      assert.equal(field().value, values[i]);
+    }
+    field().onChangeText('12345');
+    find(app.render(), 'IconButton', 'label', 'Apagar último dígito do valor').onPress();
+    assert.equal(field().value, 'R$ 12,34');
+    if (initialKind === 'RECEITA') {
+      await find(app.render(), 'Button', 'title', 'Salvar').onPress();
+      assert.equal(saved[0].cents, 1234);
+    }
+  }
 });
 
 test('sheet dialog applies only the selected scope and Android back cancels safely', () => {

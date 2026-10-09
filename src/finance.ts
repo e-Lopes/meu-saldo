@@ -136,6 +136,10 @@ export const categoryColor = (
   const color = typeof category === 'number' ? category : category.color;
   return `#${(color >>> 0).toString(16).padStart(8, '0').slice(2)}`;
 };
+export function formatAmountInput(value: string) {
+  const digits = (value.replace(/\D/g, '').replace(/^0+/, '') || '0').padStart(3, '0');
+  return `R$ ${digits.slice(0, -2)},${digits.slice(-2)}`;
+}
 export function parseCents(value: string) {
   const cleaned = value.trim();
   if (!/^\d+([,.]\d{1,2})?$/.test(cleaned)) throw new Error('Use um valor como 125,50.');
