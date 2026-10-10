@@ -1,10 +1,10 @@
 # Validação do Meu Saldo
 
-Atualizado em **08/10/2026**. Este roteiro descreve o código atual; não anuncia uma nova versão publicada.
+Atualizado em **10/10/2026** para a entrega 1.1.6. A conferência mais recente está em [testes-manuais-2026-10-10.md](testes-manuais-2026-10-10.md).
 
 ## Verificações automatizadas
 
-- `npm test`: 46 testes financeiros e de interação, incluindo duplicação independente, previsão de recorrências, comparação mensal e lembrete/backup automático.
+- `npm test`: 56 testes financeiros e de interação, incluindo ativação de recorrência em lançamentos antigos, rolagem do formulário, navegação rápida entre meses, duplicação independente, previsão de recorrências, comparação mensal e lembrete/backup automático.
 - `npm run validate`: TypeScript e formatação.
 - `npm run release:check`: ferramentas de preparação, versão, configuração e assinatura.
 - `git diff --check`: espaços e integridade dos diffs.
@@ -22,23 +22,17 @@ Conferidos:
 - Ausência de aviso de descarte ao mudar somente o tipo de uma categoria nova vazia.
 - Histórico com busca e quatro filtros ocupando a largura, grupos por data, descrições em uma linha, somente categoria como informação secundária, valores à direita e recorrência junto ao nome.
 - Gráficos com rosca e total central, legendas, barras de participação e comparação de seis meses; ausência de análise detalhada.
-- Tema escuro fixo, valores visíveis, ações/filtros em turquesa com texto escuro e cores próprias das categorias.
-- Ajustes com Organização primeiro, seguido de Dados e backup e Sobre o app. Texto sobre armazenamento local somente em Privacidade. Atualizações com “Buscar uma nova versão do aplicativo”.
+- Temas claro e escuro persistidos, valores visíveis, ações/filtros em turquesa com texto escuro e cores próprias das categorias.
+- Ajustes com Aparência, Organização, Dados e backup e Sobre o app. Texto sobre armazenamento local somente em Privacidade. Atualizações com “Buscar uma nova versão do aplicativo”.
 - Migração de cores com lançamentos e regras preservados, sem recolorir ao reabrir.
 - Ícone fornecido em `assets/icon.png`, conferido na abertura do APK atualizado sobre fundo escuro.
 
 As capturas e os dados do emulador são artefatos locais ignorados pelo Git. Não há dados financeiros pessoais nos arquivos versionados de teste.
 
-## Cenários ainda pendentes no Android
+## Escopo encerrado desta entrega
 
-Os novos fluxos de duplicação e escolha de pasta para backup automático têm testes de interação e compilação nativa concluídos; ainda precisam de conferência manual no emulador. A análise externa está em [analise-thunder-wallet.md](analise-thunder-wallet.md).
+O relatório de 10/10 registra os fluxos efetivamente percorridos no emulador e suas limitações. A análise externa está em [analise-thunder-wallet.md](analise-thunder-wallet.md).
 
-1. **Teclado e fonte ampliada:** digitar valores e descrições longas, rolar o formulário, alcançar Salvar e voltar sem perder o conteúdo. Conferir telas estreitas, textos grandes e TalkBack em aparelho físico.
-2. **Histórico extenso:** rolar muitos lançamentos nos dois sentidos, com filtros e fonte ampliada, sem saltos. A conferência com poucos registros no emulador não comprova esse cenário.
-3. **Recorrências completas pela interface:** confirmar/cancelar frequências, editar somente atual e atual/próximos, desmarcar e salvar, excluir somente ocorrência e excluir/encerrar, incluindo Desfazer. Calendário e regras têm cobertura automatizada, mas o fluxo completo no dispositivo segue pendente.
-4. **Categorias:** arquivar usadas por séries, mudar tipo bloqueado, criar pelo lançamento com tipo diferente, personalizar cor e alternar emoji/ícone. Verificar quantias grandes ao lado dos percentuais no Resumo.
-5. **Backup:** exportar e restaurar pelo provedor real de arquivos, importar JSON antigo, cancelar seletores e preservar dados em falhas. Restauração substitui dados; usar registros fictícios para a conferência.
-6. **Atualização release:** instalar sobre APK release anterior com a chave original, sem desinstalar; conferir dados e backups em modo avião. O APK debug do emulador não valida atualização de produção.
-7. **Abertura em Android antigo:** conferir ícone e fundo nas versões anteriores à API 31; a conferência visual atual foi feita na API 36.
+O responsável dispensou as validações adicionais em aparelho físico, leitor de tela, APK de produção independente, Android antigo e situações especiais do dispositivo, incluindo passagem real de três meses para o backup automático. Elas ficam fora do escopo desta entrega e não são pendências para publicação. As limitações da cobertura realizada permanecem registradas no relatório.
 
-Publicação de uma nova versão está fora desta implementação. O checklist de distribuição está em [releases.md](releases.md).
+A entrega 1.1.6 segue o fluxo de publicação automática documentado em [releases.md](releases.md).

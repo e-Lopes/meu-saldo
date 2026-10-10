@@ -78,6 +78,8 @@ export function EntryForm({
   const amountRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
   const revealActions = useRef(false);
+  const revealRecurrence = useRef(false);
+  const recurrencePosition = useRef(0);
   const [amountError, setAmountError] = useState('');
   const [categoryError, setCategoryError] = useState('');
   const categoryPosition = useRef(0);
@@ -278,7 +280,13 @@ export function EntryForm({
           </View>
           <ScrollView
             onContentSizeChange={() => {
-              if (revealActions.current) {
+              if (repeat && revealRecurrence.current) {
+                revealRecurrence.current = false;
+                scrollRef.current?.scrollTo({
+                  y: Math.max(0, recurrencePosition.current - spacing.md),
+                  animated: true,
+                });
+              } else if (revealActions.current) {
                 revealActions.current = false;
                 scrollRef.current?.scrollToEnd({ animated: true });
               }
@@ -416,47 +424,46 @@ export function EntryForm({
                 }}
               />
             )}
-            <View style={[s.row, { justifyContent: 'space-between', minHeight: 48 }]}>
-              <Text style={s.text}>Repetir lançamento</Text>
-              <Pressable
-                accessibilityRole="switch"
-                accessibilityLabel="Repetir lançamento"
-                accessibilityState={{ checked: repeat, disabled: saving }}
-                disabled={saving}
-                onPress={() => setRepeat((value) => !value)}
-                style={{
-                  minWidth: 48,
-                  minHeight: 48,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
+            <View
+              style={{ gap: spacing.sm }}
+              onLayout={(event) => {
+                recurrencePosition.current = event.nativeEvent.layout.y;
+              }}
+            >
+              <View style={[s.row, { justifyContent: 'space-between', minHeight: 48 }]}>
+                <Text style={[s.text, { flex: 1 }]}>Repetir lançamento</Text>
                 <Switch
-                  accessible={false}
-                  pointerEvents="none"
+                  accessibilityLabel="Repetir lançamento"
                   value={repeat}
                   disabled={saving}
+                  onValueChange={(value) => {
+                    if (savingRef.current || saving || value === repeat) return;
+                    revealRecurrence.current = value;
+                    setRepeat(value);
+                    Keyboard.dismiss();
+                  }}
+                  style={{ minWidth: 48, minHeight: 48 }}
                   trackColor={{ false: palette.border, true: palette.accent }}
                 />
-              </Pressable>
+              </View>
+              {repeat && (
+                <SegmentedControl
+                  label="Frequência da recorrência"
+                  value={frequency}
+                  disabled={saving}
+                  onChange={setFrequency}
+                  options={[
+                    { value: 'monthly', label: 'Mensal' },
+                    { value: 'weekly', label: 'Semanal' },
+                  ]}
+                />
+              )}
             </View>
-            {repeat && (
-              <SegmentedControl
-                label="Frequência da recorrência"
-                value={frequency}
-                disabled={saving}
-                onChange={setFrequency}
-                options={[
-                  { value: 'monthly', label: 'Mensal' },
-                  { value: 'weekly', label: 'Semanal' },
-                ]}
-              />
-            )}
             {rule && !repeat && (
               <Text style={[s.muted, { color: palette.warning }]}>
                 {rule.active
-                  ? 'Ao salvar, as próximas ocorrências serão interrompidas. Este lançamento e o histórico serão preservados.'
-                  : 'Recorrência encerrada. As próximas ocorrências estão interrompidas; este lançamento e o histórico foram preservados.'}
+                  ? `Desligando a recorrência, não haverá mais lançamentos como este ${rule.frequency === 'monthly' ? 'nos próximos meses' : 'nas próximas semanas'}.`
+                  : `Recorrência desligada. Não haverá mais lançamentos como este ${rule.frequency === 'monthly' ? 'nos próximos meses' : 'nas próximas semanas'}.`}
               </Text>
             )}
             {!!error && (

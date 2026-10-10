@@ -116,6 +116,69 @@ function seed(date = finance.today()) {
     date,
   );
 }
+
+test('rapid month navigation accumulates every tap before the next render, including year changes', () => {
+  const state = hooks();
+  const components = Object.fromEntries(
+    [
+      'HomeScreen',
+      'UpdateCard',
+      'BottomNavigation',
+      'CategoryScreen',
+      'Charts',
+      'HistoryScreen',
+      'MenuScreen',
+      'EntryForm',
+      'SaveNotice',
+    ].map((name) => [`./src/${name}`, { [name]: name }]),
+  );
+  const { default: App } = source('../App.tsx', {
+    ...components,
+    react: state.react,
+    'react/jsx-runtime': runtime,
+    'react-native': {
+      ...Object.fromEntries(
+        ['ActivityIndicator', 'Modal', 'Pressable', 'ScrollView', 'Text', 'View'].map((name) => [
+          name,
+          name,
+        ]),
+      ),
+      BackHandler: { addEventListener: () => ({ remove() {} }) },
+    },
+    'react-native-safe-area-context': {
+      SafeAreaProvider: 'SafeAreaProvider',
+      SafeAreaView: 'SafeAreaView',
+    },
+    'expo-status-bar': { StatusBar: 'StatusBar' },
+    './src/Appearance': { ...appearance, AppearanceProvider: 'AppearanceProvider' },
+    './src/finance': finance,
+    './src/ui': { ...ui, MonthSelector: 'MonthSelector' },
+    './src/useLedger': {
+      useLedger: () => ({ ledger: finance.initialLedger(), busy: false, loading: false }),
+    },
+    './src/useUpdates': { useUpdates: () => ({}) },
+    './src/useBackup': { useBackup: () => ({}) },
+  });
+  const Main = nodes(App()).find((node) => typeof node.type === 'function').type;
+  const render = () => state.render(Main);
+  const initial = finance.today().slice(0, 7);
+  const selector = () => find(render(), 'MonthSelector', 'month', expected);
+  let expected = initial;
+  const shift = selector().onShift;
+  for (let i = 0; i < 32; i++) shift(-1);
+  expected = finance.shiftMonth(initial, -32);
+  assert.equal(selector().month, expected);
+  shift(1);
+  shift(1);
+  shift(-1);
+  expected = finance.shiftMonth(initial, -31);
+  assert.equal(selector().month, expected);
+  selector().onCurrent();
+  expected = initial;
+  assert.equal(selector().month, initial);
+  state.unmount();
+});
+
 function form({
   ledger = finance.initialLedger(),
   entry = null,
@@ -127,6 +190,7 @@ function form({
 } = {}) {
   const state = hooks();
   const alerts = [];
+  const nativeCalls = { keyboardDismissals: 0 };
   const native = Object.fromEntries(
     [
       'KeyboardAvoidingView',
@@ -145,7 +209,11 @@ function form({
     'react-native': {
       ...native,
       Alert: { alert: (...args) => alerts.push(args) },
-      Keyboard: { dismiss() {} },
+      Keyboard: {
+        dismiss() {
+          nativeCalls.keyboardDismissals += 1;
+        },
+      },
     },
     './Appearance': appearance,
     './SaveNotice': { SaveNotice: 'SaveNotice' },
@@ -155,7 +223,7 @@ function form({
     './ui': ui,
     './MenuRow': { MenuRow: 'MenuRow' },
     './CategoryScreen': { CategoryScreen: 'CategoryScreen' },
-    './theme/tokens': { spacing: {} },
+    './theme/tokens': { spacing: { md: 16 } },
     './finance': finance,
     './useLedger': { errorMessage: (error) => error.message },
     '@react-native-community/datetimepicker': { default: 'DateTimePicker' },
@@ -176,14 +244,135 @@ function form({
         mutate: async () => {},
       }),
     );
-  return { render, alerts };
+  return { render, alerts, nativeCalls };
 }
+
+test('old expenses and income can become monthly or weekly recurrences through the native switch', async (t) => {
+  for (const kind of ['DESPESA', 'RECEITA']) {
+    for (const frequency of ['monthly', 'weekly']) {
+      await t.test(`${kind} ${frequency}`, async () => {
+        const entry = {
+          id: 'old-entry',
+          kind,
+          cents: 12345,
+          date: '2024-01-31',
+          categoryId: kind === 'DESPESA' ? 'food' : null,
+          description: 'Lançamento antigo',
+        };
+        const ledger = { ...finance.initialLedger(), entries: [entry] };
+        let saved;
+        let closed = false;
+        const app = form({
+          ledger,
+          entry,
+          onSave: async (value, recurrence) => {
+            saved = finance.saveEntry(ledger, value, recurrence, entry.date);
+          },
+          onClose: () => {
+            closed = true;
+          },
+        });
+        const toggle = () =>
+          find(app.render(), 'Switch', 'accessibilityLabel', 'Repetir lançamento');
+        assert.equal(toggle().value, false);
+        assert.ok(
+          !nodes(app.render()).some(
+            (node) =>
+              node.type === 'SegmentedControl' && node.props.label === 'Frequência da recorrência',
+          ),
+        );
+        toggle().onValueChange(true);
+        toggle().onValueChange(true);
+        assert.equal(toggle().value, true);
+        const options = find(
+          app.render(),
+          'SegmentedControl',
+          'label',
+          'Frequência da recorrência',
+        );
+        assert.deepEqual(
+          Array.from(options.options, (option) => option.label),
+          ['Mensal', 'Semanal'],
+        );
+        options.onChange(frequency);
+        toggle().onValueChange(false);
+        assert.equal(toggle().value, false);
+        assert.ok(
+          !nodes(app.render()).some(
+            (node) =>
+              node.type === 'SegmentedControl' && node.props.label === 'Frequência da recorrência',
+          ),
+        );
+        toggle().onValueChange(true);
+        assert.equal(
+          find(app.render(), 'SegmentedControl', 'label', 'Frequência da recorrência').value,
+          frequency,
+        );
+        find(app.render(), 'Button', 'title', 'Salvar').onPress();
+        assert.equal(app.alerts[0][0], 'Confirmar recorrência');
+        assert.equal(toggle().disabled, true);
+        toggle().onValueChange(false);
+        assert.equal(toggle().value, true);
+        app.alerts[0][2][1].onPress();
+        await flush();
+        assert.equal(closed, true);
+        assert.equal(saved.entries.length, 1);
+        for (const property of ['id', 'kind', 'cents', 'date', 'categoryId', 'description']) {
+          assert.equal(saved.entries[0][property], entry[property]);
+        }
+        assert.equal(saved.recurrences.length, 1);
+        assert.equal(saved.recurrences[0].frequency, frequency);
+        assert.equal(saved.recurrences[0].anchorDate, entry.date);
+        assert.equal(saved.recurrences[0].active, true);
+        const reopened = form({ ledger: saved, entry: saved.entries[0] });
+        assert.equal(
+          find(reopened.render(), 'Switch', 'accessibilityLabel', 'Repetir lançamento').value,
+          true,
+        );
+        assert.equal(
+          find(reopened.render(), 'SegmentedControl', 'label', 'Frequência da recorrência').value,
+          frequency,
+        );
+      });
+    }
+  }
+});
+
+test('enabling recurrence dismisses the keyboard and reveals its controls after content layout, once', () => {
+  const app = form();
+  const scrolls = [];
+  find(app.render(), 'ScrollView', 'keyboardShouldPersistTaps', 'handled').ref.current = {
+    scrollTo: (options) => scrolls.push(options),
+    scrollToEnd: () => assert.fail('Recurrence must reveal its own position'),
+  };
+  find(app.render(), 'Switch', 'accessibilityLabel', 'Repetir lançamento').onValueChange(true);
+  assert.equal(app.nativeCalls.keyboardDismissals, 1);
+  const tree = app.render();
+  const section = nodes(tree).find(
+    (node) =>
+      node.type === 'View' &&
+      node.props.onLayout &&
+      nodes(node).some((child) => child.type === 'Switch'),
+  );
+  section.props.onLayout({ nativeEvent: { layout: { y: 420 } } });
+  assert.equal(scrolls.length, 0);
+  const scroll = find(tree, 'ScrollView', 'keyboardShouldPersistTaps', 'handled');
+  scroll.onContentSizeChange();
+  assert.equal(scrolls.length, 1);
+  assert.equal(scrolls[0].y, 404);
+  assert.equal(scrolls[0].animated, true);
+  scroll.onContentSizeChange();
+  assert.equal(scrolls.length, 1);
+  find(app.render(), 'Switch', 'accessibilityLabel', 'Repetir lançamento').onValueChange(false);
+  find(app.render(), 'ScrollView', 'keyboardShouldPersistTaps', 'handled').onContentSizeChange();
+  assert.equal(scrolls.length, 1);
+});
 
 test('recurrence confirmation can cancel without saving, and repeated save taps are guarded', async () => {
   const saved = [];
   const app = form({ onSave: async (...args) => saved.push(args) });
   find(app.render(), 'Field', 'label', 'Valor (R$)').onChangeText('100');
-  find(app.render(), 'Pressable', 'accessibilityRole', 'switch').onPress();
+  find(app.render(), 'Switch', 'accessibilityLabel', 'Repetir lançamento').onValueChange(true);
   const button = find(app.render(), 'Button', 'title', 'Salvar');
   button.onPress();
   button.onPress();
@@ -210,7 +399,7 @@ test('weekly confirmation names the weekday and save errors leave the form open 
     },
   });
   find(app.render(), 'Field', 'label', 'Valor (R$)').onChangeText('20');
-  find(app.render(), 'Pressable', 'accessibilityRole', 'switch').onPress();
+  find(app.render(), 'Switch', 'accessibilityLabel', 'Repetir lançamento').onValueChange(true);
   find(app.render(), 'SegmentedControl', 'label', 'Frequência da recorrência').onChange('weekly');
   find(app.render(), 'Button', 'title', 'Salvar').onPress();
   assert.match(
@@ -234,7 +423,7 @@ test('unchecking an active recurrence saves without an edit-scope prompt', async
       result = args;
     },
   });
-  find(app.render(), 'Pressable', 'accessibilityRole', 'switch').onPress();
+  find(app.render(), 'Switch', 'accessibilityLabel', 'Repetir lançamento').onValueChange(false);
   find(app.render(), 'Button', 'title', 'Salvar').onPress();
   await flush();
   assert.equal(app.alerts.length, 0);

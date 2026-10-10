@@ -201,8 +201,10 @@ function Main() {
             month={month}
             onCurrent={() => setMonth(today().slice(0, 7))}
             onShift={(delta) => {
-              const next = shiftMonth(month, delta);
-              if (/^\d{4}-\d{2}$/.test(next)) setMonth(next);
+              setMonth((current) => {
+                const next = shiftMonth(current, delta);
+                return /^\d{4}-\d{2}$/.test(next) ? next : current;
+              });
             }}
           />
         )}
